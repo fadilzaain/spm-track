@@ -27,6 +27,7 @@
                 <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'aktif' : '' }}">Dashboard</a>
                 <a href="{{ route('input.nilai') }}" class="{{ request()->routeIs('input.nilai*') ? 'aktif' : '' }}">Input Nilai</a>
                 <a href="{{ route('pencapaian') }}" class="{{ request()->routeIs('pencapaian*') ? 'aktif' : '' }}">Pencapaian</a>
+                <a href="{{ route('laporan') }}" class="{{ request()->routeIs('laporan*') ? 'aktif' : '' }}">Laporan</a>
             </nav>
 
             <div class="pengguna">

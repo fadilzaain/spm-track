@@ -161,3 +161,11 @@ h2 { font-size: 15px; }
 .aksi-form { display: flex; justify-content: flex-end; margin-top: 16px; }
 .tombol-utama { background: var(--accent); color: #fff; border: 0; border-radius: 7px; padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer; }
 .tombol-utama:hover { filter: brightness(1.08); }
+
+/* ===== Laporan rekap (tabel lebar) ===== */
+.aksi-kepala { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+a.tombol-utama { display: inline-block; text-decoration: none; }
+.tabel-lebar { min-width: 1500px; }
+.tabel-lebar th.bln, .tabel-lebar td.bln { text-align: center; white-space: nowrap; width: 62px; }
+.tabel-lebar td.bln { font-size: 13px; }
+.tabel-lebar td.pencapaian { font-weight: 600; width: 96px; }

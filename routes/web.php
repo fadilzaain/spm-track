@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InputNilaiController;
+use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PencapaianController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,4 +39,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/pencapaian', [PencapaianController::class, 'simpan'])
         ->middleware('role:admin,petugas_unit')
         ->name('pencapaian.simpan');
+
+    // Laporan rekap: semua role boleh melihat dan mengunduh. Ekspor Excel mengikuti filter (?tahun=&layanan=)
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
+    Route::get('/laporan/ekspor', [LaporanController::class, 'ekspor'])->name('laporan.ekspor');
 });
