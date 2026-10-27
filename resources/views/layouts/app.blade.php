@@ -24,7 +24,9 @@
             </a>
 
             <nav class="menu">
-                <a href="{{ route('dashboard') }}" class="aktif">Dashboard</a>
+                <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'aktif' : '' }}">Dashboard</a>
+                <a href="{{ route('input.nilai') }}" class="{{ request()->routeIs('input.nilai*') ? 'aktif' : '' }}">Input Nilai</a>
+                <a href="{{ route('pencapaian') }}" class="{{ request()->routeIs('pencapaian*') ? 'aktif' : '' }}">Pencapaian</a>
             </nav>
 
             <div class="pengguna">

@@ -149,3 +149,15 @@ h2 { font-size: 15px; }
     .merek-teks small, .pengguna-info .pil { display: none; }
     .halaman { padding: 16px; }
 }
+
+/* ===== Form input (nilai bulanan dan pencapaian) ===== */
+.pesan { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); }
+.pesan-ok { background: color-mix(in oklab, var(--ok) 14%, var(--surface)); border-color: color-mix(in oklab, var(--ok) 40%, var(--line)); color: var(--ok); }
+.pesan-bad { background: color-mix(in oklab, var(--bad) 12%, var(--surface)); border-color: color-mix(in oklab, var(--bad) 40%, var(--line)); color: var(--bad); }
+.petunjuk { margin: 0 0 12px; }
+.sel-input { min-width: 200px; }
+.input-teks { width: 100%; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; }
+.input-teks:focus { outline: 2px solid color-mix(in oklab, var(--accent) 55%, transparent); border-color: var(--accent); }
+.aksi-form { display: flex; justify-content: flex-end; margin-top: 16px; }
+.tombol-utama { background: var(--accent); color: #fff; border: 0; border-radius: 7px; padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer; }
+.tombol-utama:hover { filter: brightness(1.08); }
