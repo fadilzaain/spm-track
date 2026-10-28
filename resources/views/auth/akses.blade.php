@@ -4,13 +4,6 @@
 
 @section('konten')
     @php
-        // Poin di panel kiri: dibuat dari satu daftar lalu digambar lewat perulangan
-        $poin = [
-            ['ikon' => 'persen',  'teks' => 'Pantau kelengkapan pengisian SPM tiap unit'],
-            ['ikon' => 'input',   'teks' => 'Input nilai bulanan dan pencapaian tahunan'],
-            ['ikon' => 'laporan', 'teks' => 'Laporan rekap siap diekspor ke Excel'],
-        ];
-
         // Pilihan peran saat daftar: judul + penjelasan singkat. Admin tidak ada di sini (hanya dibuat oleh admin).
         $peran = [
             'petugas_unit' => ['Petugas Unit', 'Mengisi data unitnya sendiri'],
@@ -20,27 +13,21 @@
     @endphp
 
     <main class="akses">
-        {{-- ===== Panel kiri: identitas ===== --}}
+        {{-- ===== Panel kiri: identitas (logo, nama, subjudul), semuanya di tengah ===== --}}
         <section class="akses-brand">
             <span class="orb orb-1"></span>
             <span class="orb orb-2"></span>
 
             <div class="akses-brand-isi">
-                <x-logo class="logo-besar naik-urut" style="--i: 0" />
-                <h1 class="naik-urut" style="--i: 1">RSUD <span>Jombang</span></h1>
-                <p class="akses-sub naik-urut" style="--i: 2">Web Standar Pelayanan Minimal RS</p>
-
-                <ul class="akses-poin">
-                    @foreach ($poin as $i => $p)
-                        <li class="naik-urut" style="--i: {{ $i + 3 }}">
-                            <span class="ikon-kotak nada-utama"><x-ikon :nama="$p['ikon']" /></span>
-                            {{ $p['teks'] }}
-                        </li>
-                    @endforeach
-                </ul>
+                {{-- Pembungkus logo: tempat cincin cahaya berdenyut di belakang logo --}}
+                <div class="brand-logo-bungkus brand-masuk" style="--i: 0">
+                    <x-logo class="logo-besar" />
+                </div>
+                <h1 class="brand-masuk" style="--i: 1">RSUD <span>Jombang</span></h1>
+                <p class="akses-sub brand-masuk" style="--i: 2">Web Standar Pelayanan Minimal RS</p>
             </div>
 
-            <small class="akses-kaki">© RSUD Kabupaten Jombang · SPM Track</small>
+            <small class="akses-kaki brand-masuk" style="--i: 4">© RSUD Kabupaten Jombang · SPM Track</small>
         </section>
 
         {{-- ===== Panel kanan: form Masuk / Daftar ===== --}}
