@@ -1,47 +1,101 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-tema="gelap">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('judul', 'SPM Track') · RSUD Kabupaten Jombang</title>
-    <link rel="stylesheet" href="{{ asset('css/spm.css') }}">
+
+    {{-- Pasang tema tersimpan sebelum halaman digambar, supaya tidak berkedip --}}
+    <script>try { document.documentElement.dataset.tema = localStorage.getItem('tema') || 'gelap'; } catch (e) {}</script>
+
+    {{-- ?v=... mencegah browser memakai CSS/JS lama dari cache --}}
+    <link rel="stylesheet" href="{{ asset('css/spm.css') }}?v={{ filemtime(public_path('css/spm.css')) }}">
+    <script src="{{ asset('js/spm.js') }}?v={{ filemtime(public_path('js/spm.js')) }}" defer></script>
 </head>
 <body>
     @php
-        // Nama tampilan user dan label role (role disimpan sebagai admin / petugas_unit / manajemen)
-        $pengguna = auth()->user();
+        $pengguna  = auth()->user();
+        $namaTampil = $pengguna->nama ?: $pengguna->username;
         $labelRole = ['admin' => 'Admin', 'petugas_unit' => 'Petugas Unit', 'manajemen' => 'Manajemen'];
+
+        // Daftar menu dibuat satu kali di sini, lalu digambar lewat perulangan (tidak ditulis berulang).
+        // rute = nama route, cocok = pola route yang menandai menu aktif
+        $menu = [
+            'Pemantauan' => [
+                ['rute' => 'dashboard',    'cocok' => 'dashboard',     'nama' => 'Dashboard',   'ikon' => 'dashboard'],
+                ['rute' => 'laporan',      'cocok' => 'laporan*',      'nama' => 'Laporan',     'ikon' => 'laporan'],
+            ],
+            'Pengisian data' => [
+                ['rute' => 'input.nilai',  'cocok' => 'input.nilai*',  'nama' => 'Input Nilai', 'ikon' => 'input'],
+                ['rute' => 'pencapaian',   'cocok' => 'pencapaian*',   'nama' => 'Pencapaian',  'ikon' => 'target'],
+            ],
+        ];
+
+        // Nomor urut dipakai untuk jeda animasi masuk tiap item sidebar (muncul satu per satu)
+        $urut = 0;
     @endphp
 
-    <header class="topbar">
-        <div class="topbar-isi">
-            <a class="merek" href="{{ route('dashboard') }}">
-                <span class="merek-tanda">SPM</span>
-                <span class="merek-teks">
-                    <strong>SPM Track</strong>
-                    <small>RSUD Kabupaten Jombang</small>
-                </span>
-            </a>
+    {{-- Checkbox penyimpan status buka/tutup sidebar untuk layar sentuh dan keyboard (tanpa JavaScript) --}}
+    <input type="checkbox" id="sidebar-toggle" class="sidebar-toggle" aria-label="Buka atau tutup menu samping">
+    <label for="sidebar-toggle" class="tombol-menu" title="Menu"><x-ikon nama="menu" /></label>
 
-            <nav class="menu">
-                <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'aktif' : '' }}">Dashboard</a>
-                <a href="{{ route('input.nilai') }}" class="{{ request()->routeIs('input.nilai*') ? 'aktif' : '' }}">Input Nilai</a>
-                <a href="{{ route('pencapaian') }}" class="{{ request()->routeIs('pencapaian*') ? 'aktif' : '' }}">Pencapaian</a>
-                <a href="{{ route('laporan') }}" class="{{ request()->routeIs('laporan*') ? 'aktif' : '' }}">Laporan</a>
+    {{-- Zona sensor di tepi kiri layar: mouse masuk ke sini, sidebar muncul --}}
+    <div class="sidebar-zona" aria-hidden="true"></div>
+
+    <aside class="sidebar" aria-label="Menu samping">
+        <a class="merek masuk" style="--i: {{ $urut++ }}" href="{{ route('dashboard') }}">
+            <span class="merek-tanda">SPM</span>
+            <span class="merek-teks">
+                <strong>SPM Track</strong>
+                <small>RSUD Kabupaten Jombang</small>
+            </span>
+        </a>
+
+        @foreach ($menu as $grup => $butir)
+            <nav class="menu" aria-label="{{ $grup }}">
+                <p class="sidebar-grup masuk" style="--i: {{ $urut++ }}">{{ $grup }}</p>
+
+                @foreach ($butir as $m)
+                    @php $aktif = request()->routeIs($m['cocok']); @endphp
+                    <a class="masuk {{ $aktif ? 'aktif' : '' }}" style="--i: {{ $urut++ }}"
+                       href="{{ route($m['rute']) }}" @if ($aktif) aria-current="page" @endif>
+                        <span class="ikon-kotak"><x-ikon :nama="$m['ikon']" /></span>
+                        {{ $m['nama'] }}
+                    </a>
+                @endforeach
             </nav>
+        @endforeach
+
+        <div class="sidebar-bawah masuk" style="--i: {{ $urut++ }}">
+            {{-- Tombol ganti tema gelap/terang (ditangani spm.js) --}}
+            <div class="menu">
+                <button type="button" data-ganti-tema>
+                    <span class="ikon-kotak">
+                        <x-ikon nama="bulan" class="ikon-bulan" />
+                        <x-ikon nama="matahari" class="ikon-matahari" />
+                    </span>
+                    <span>Tema <small class="tema-nama"></small></span>
+                </button>
+            </div>
 
             <div class="pengguna">
-                <div class="pengguna-info">
-                    <strong>{{ $pengguna->nama ?: $pengguna->username }}</strong>
-                    <span class="pil">{{ $labelRole[$pengguna->role] ?? $pengguna->role }}</span>
-                </div>
+                <span class="avatar">{{ mb_strtoupper(mb_substr($namaTampil, 0, 2)) }}</span>
+                <span class="pengguna-info">
+                    <strong>{{ $namaTampil }}</strong>
+                    <small>{{ $labelRole[$pengguna->role] ?? $pengguna->role }}</small>
+                </span>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="tombol-garis">Keluar</button>
+                    <button type="submit" class="tombol-ikon" title="Keluar" aria-label="Keluar">
+                        <x-ikon nama="keluar" />
+                    </button>
                 </form>
             </div>
         </div>
-    </header>
+    </aside>
+
+    {{-- Tirai gelap di belakang sidebar (hanya saat dibuka lewat tombol menu): klik untuk menutup --}}
+    <label for="sidebar-toggle" class="sidebar-tirai" aria-hidden="true"></label>
 
     <main class="halaman">
         @yield('konten')
