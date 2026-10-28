@@ -1,5 +1,4 @@
 /* ===== SPM Track: logo, halaman Masuk/Daftar, Kelola Pengguna ===== */
-/* Memakai variabel warna dan kelas dasar dari spm.css (dimuat lebih dulu), jadi mode gelap/terang otomatis ikut. */
 
 /* ----- Logo RSUD (sidebar dan halaman login) ----- */
 .logo { width: 46px; height: 46px; object-fit: contain; flex: none; }
@@ -11,7 +10,7 @@
 .nada-warn, .badge-warn { --tone: var(--warn); }
 .lencana { margin-left: auto; }
 .tombol-utama.blok { width: 100%; padding-block: 12px; }
-.tombol-garis { font: inherit; font-weight: 600; cursor: pointer; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 9px 18px; transition: background-color 0.25s, border-color 0.25s, color 0.25s; }
+.tombol-garis { font: inherit; font-weight: 500; cursor: pointer; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 9px 18px; transition: background-color 0.25s, border-color 0.25s, color 0.25s; }
 .tombol-garis:hover { background: var(--surface-2); border-color: color-mix(in oklab, var(--accent) 40%, var(--line)); }
 .tombol-garis.bahaya:hover { color: var(--bad); border-color: var(--bad); }
 
@@ -33,7 +32,7 @@
     border-right: 1px solid var(--line);
 }
 .akses-brand-isi { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; margin: auto 0; max-width: 470px; }
-.akses-brand h1 { font-size: clamp(34px, 4.2vw, 54px); letter-spacing: -0.03em; }
+.akses-brand h1 { font-size: clamp(34px, 4.2vw, 54px); letter-spacing: -0.015em; }
 .akses-brand h1 span { color: var(--accent); }
 .akses-sub { margin: 0; font-size: 18px; color: var(--ink-2); }
 .akses-poin { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 12px; }
@@ -53,7 +52,7 @@
 /* ----- Tab Masuk / Daftar (murni CSS: radio + :has) ----- */
 .tab-radio { position: absolute; opacity: 0; pointer-events: none; }
 .tab-bar { position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; }
-.tab-bar label { position: relative; z-index: 1; padding: 9px 0; text-align: center; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: color 0.3s; }
+.tab-bar label { position: relative; z-index: 1; padding: 9px 0; text-align: center; font-weight: 500; color: var(--ink-2); cursor: pointer; transition: color 0.3s; }
 .tab-geser { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 999px; background: var(--accent); box-shadow: 0 6px 18px color-mix(in oklab, var(--accent) 35%, transparent); transition: transform 0.5s var(--ease); }
 .akses-kartu:has(#tab-daftar:checked) .tab-geser { transform: translateX(100%); }
 .akses-kartu:has(#tab-masuk:checked) label[for="tab-masuk"],
@@ -74,7 +73,7 @@
 
 /* ----- Isian form (komponen x-isian) ----- */
 .isian { display: flex; flex-direction: column; gap: 6px; }
-.isian-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.isian-label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
 .isian-kotak { position: relative; display: flex; align-items: center; }
 .isian-kotak > .ikon { position: absolute; left: 14px; width: 18px; height: 18px; color: var(--ink-2); pointer-events: none; transition: color 0.25s; }
 .isian-kotak:focus-within > .ikon { color: var(--accent); }

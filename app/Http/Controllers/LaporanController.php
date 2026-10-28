@@ -31,8 +31,7 @@ class LaporanController extends Controller
     }
 
     /**
-     * Unduh laporan sebagai file Excel. Isinya mengikuti filter yang sedang dipilih di layar
-     * (?tahun=&layanan=).
+     * Unduh laporan sebagai file Excel.
      */
     public function ekspor(Request $request)
     {

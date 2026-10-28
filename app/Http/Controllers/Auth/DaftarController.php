@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 
 class DaftarController extends Controller
 {
-    // Pesan galat berbahasa Indonesia
+    // Pesan galat 
     private const PESAN = [
         'required' => ':attribute wajib diisi.',
         'required_if' => ':attribute wajib dipilih untuk Petugas Unit.',

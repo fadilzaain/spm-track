@@ -1,10 +1,12 @@
-{{-- Isi <head> yang dipakai bersama layout aplikasi (app) dan layout tamu (login/daftar) --}}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>@yield('judul', 'SPM Track') · RSUD Kabupaten Jombang</title>
 
 {{-- Pasang tema tersimpan sebelum halaman digambar, supaya tidak berkedip --}}
 <script>try { document.documentElement.dataset.tema = localStorage.getItem('tema') || 'gelap'; } catch (e) {}</script>
+
+{{-- Muat font lebih awal supaya tulisan tidak berganti bentuk saat halaman terbuka --}}
+<link rel="preload" href="{{ asset('fonts/ibm-plex-sans-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
 
 {{-- ?v=... mencegah browser memakai CSS/JS lama dari cache --}}
 @foreach (['css/spm.css', 'css/akses.css'] as $css)

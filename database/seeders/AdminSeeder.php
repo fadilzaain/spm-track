@@ -2,53 +2,53 @@
 
 namespace Database\Seeders;
 
-use App\Models\JenisPelayanan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class AdminSeeder extends Seeder
 {
+    /**
+     * Membuat akun Admin
+     *
+     *     php artisan db:seed --class=AdminSeeder
+     *
+     */
     public function run(): void
     {
-        // Password sementara untuk semua akun contoh.
-        // WAJIB diganti atau akun contoh dihapus sebelum dipakai di server RS.
-        $passwordSementara = 'Spm@12345';
+        $username = trim((string) $this->command->ask('Username admin', 'admin'));
+        $nama = trim((string) $this->command->ask('Nama lengkap admin', 'Administrator'));
 
-        // Akun Admin awal (tidak terikat layanan)
-        User::updateOrCreate(
-            ['username' => 'admin'],
-            [
-                'nama' => 'Administrator',
-                'password' => $passwordSementara,
-                'role' => User::ROLE_ADMIN,
-                'jenis_pelayanan_id' => null,
-            ]
-        );
+        // Jangan menimpa akun yang sudah ada (mencegah password admin lama terganti tanpa sengaja)
+        if (User::where('username', $username)->exists()) {
+            $this->command->error("Username \"{$username}\" sudah ada. Tidak ada yang diubah.");
 
-        // Akun contoh Manajemen, untuk tes role (hapus nanti)
-        User::updateOrCreate(
-            ['username' => 'manajemen'],
-            [
-                'nama' => 'Contoh Manajemen',
-                'password' => $passwordSementara,
-                'role' => User::ROLE_MANAJEMEN,
-                'jenis_pelayanan_id' => null,
-            ]
-        );
-
-        // Akun contoh Petugas Unit, dikaitkan ke layanan pertama di database (hapus nanti)
-        $layanan = JenisPelayanan::orderBy('id')->first();
-
-        if ($layanan) {
-            User::updateOrCreate(
-                ['username' => 'petugas'],
-                [
-                    'nama' => 'Contoh Petugas Unit',
-                    'password' => $passwordSementara,
-                    'role' => User::ROLE_PETUGAS_UNIT,
-                    'jenis_pelayanan_id' => $layanan->id,
-                ]
-            );
+            return;
         }
+
+        $password = (string) $this->command->secret('Password admin (minimal 12 karakter)');
+        $ulangi = (string) $this->command->secret('Ketik ulang password');
+
+        if (mb_strlen($password) < 12) {
+            $this->command->error('Password terlalu pendek (minimal 12 karakter). Akun tidak dibuat.');
+
+            return;
+        }
+
+        if ($password !== $ulangi) {
+            $this->command->error('Kedua password tidak sama. Akun tidak dibuat.');
+
+            return;
+        }
+
+        // Password otomatis di-hash oleh model User (lihat casts di User.php)
+        User::create([
+            'nama' => $nama,
+            'username' => $username,
+            'password' => $password,
+            'role' => User::ROLE_ADMIN,
+            'jenis_pelayanan_id' => null, // Admin tidak terikat satu unit pelayanan
+        ]);
+
+        $this->command->info("Akun Admin \"{$username}\" berhasil dibuat.");
     }
 }
