@@ -6,6 +6,8 @@ use App\Models\JenisPelayanan;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class PenggunaController extends Controller
@@ -16,6 +18,7 @@ class PenggunaController extends Controller
         'tolak' => [User::STATUS_DITOLAK, 'ditolak'],
         'nonaktifkan' => [User::STATUS_NONAKTIF, 'dinonaktifkan'],
         'simpan' => [null, 'diperbarui'],
+        'reset' => [null, 'direset'],   // ditangani khusus di resetPassword(), bukan lewat alur status
     ];
 
     // Daftar akun. Filter lewat ?status= (default: yang menunggu persetujuan)
@@ -59,6 +62,11 @@ class PenggunaController extends Controller
             'layanan' => ['nullable', 'integer', 'exists:jenis_pelayanan,id'],
         ]);
 
+        // Reset password punya alur sendiri (tidak mengubah status, role, atau unit)
+        if ($data['aksi'] === 'reset') {
+            return $this->resetPassword($pengguna);
+        }
+
         [$statusBaru, $kataKerja] = self::AKSI[$data['aksi']];
         $ubah = $statusBaru ? ['status' => $statusBaru] : [];
 
@@ -77,5 +85,42 @@ class PenggunaController extends Controller
         $pengguna->update($ubah);
 
         return back()->with('status', 'Akun '.($pengguna->nama ?: $pengguna->username)." {$kataKerja}.");
+    }
+
+    // Buat password sementara untuk satu akun. Passwordnya ditampilkan sekali ke admin, lalu yang punya akun wajib menggantinya.
+    private function resetPassword(User $pengguna): RedirectResponse
+    {
+        $sementara = $this->buatPasswordSementara();
+
+        // Password otomatis di-hash oleh model User. Token "ingat saya" diganti supaya cookie lama tidak berlaku.
+        $pengguna->forceFill([
+            'password' => $sementara,
+            'wajib_ganti_password' => true,
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        // Keluarkan sesi lama akun ini (hanya kalau sesi disimpan di database)
+        if (config('session.driver') === 'database') {
+            DB::table(config('session.table', 'sessions'))->where('user_id', $pengguna->id)->delete();
+        }
+
+        return back()->with('sandi_sementara', [
+            'nama' => $pengguna->nama ?: $pengguna->username,
+            'username' => $pengguna->username,
+            'password' => $sementara,
+        ]);
+    }
+
+    // 10 karakter acak yang aman (huruf yang mirip seperti I, l, O, 0, 1 sengaja dibuang supaya mudah dibaca)
+    private function buatPasswordSementara(int $panjang = 10): string
+    {
+        $huruf = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+        $hasil = '';
+
+        for ($i = 0; $i < $panjang; $i++) {
+            $hasil .= $huruf[random_int(0, strlen($huruf) - 1)];
+        }
+
+        return $hasil;
     }
 }

@@ -47,6 +47,7 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
+        'wajib_ganti_password',
         'jenis_pelayanan_id',
     ];
 
@@ -60,6 +61,8 @@ class User extends Authenticatable
         return [
             // Password otomatis di-hash saat diisi
             'password' => 'hashed',
+            // Penanda password sementara dari admin (wajib diganti saat login)
+            'wajib_ganti_password' => 'boolean',
         ];
     }
 

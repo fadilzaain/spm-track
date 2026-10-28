@@ -12,7 +12,7 @@
         $badge = ['menunggu' => 'badge-warn', 'aktif' => 'badge-ok', 'ditolak' => 'badge-bad', 'nonaktif' => ''];
         $tombol = [
             'menunggu' => [['setujui', 'Setujui', 'tombol-utama'], ['tolak', 'Tolak', 'tombol-garis bahaya']],
-            'aktif'    => [['simpan', 'Simpan', 'tombol-utama'], ['nonaktifkan', 'Nonaktifkan', 'tombol-garis bahaya']],
+            'aktif'    => [['simpan', 'Simpan', 'tombol-utama'], ['reset', 'Reset password', 'tombol-garis'], ['nonaktifkan', 'Nonaktifkan', 'tombol-garis bahaya']],
             'ditolak'  => [['setujui', 'Setujui', 'tombol-utama']],
             'nonaktif' => [['setujui', 'Aktifkan', 'tombol-utama']],
         ];
@@ -33,6 +33,16 @@
     {{-- ===== Pesan ===== --}}
     @if (session('status'))
         <div class="pesan pesan-ok">{{ session('status') }}</div>
+    @endif
+
+    {{-- Password sementara hasil reset: hanya tampil sekali (flash), hilang kalau halaman dimuat ulang --}}
+    @if (session('sandi_sementara'))
+        @php $sandi = session('sandi_sementara'); @endphp
+        <div class="pesan nada-warn sandi-sementara">
+            <strong>Password {{ $sandi['nama'] }} ({{ $sandi['username'] }}) sudah direset.</strong>
+            <code class="sandi-kode">{{ $sandi['password'] }}</code>
+            <small>Catat sekarang dan berikan ke yang bersangkutan. Password ini hanya tampil sekali. Saat login, mereka diminta menggantinya.</small>
+        </div>
     @endif
 
     @if ($errors->any())
@@ -82,7 +92,8 @@
                             <small>Ini akun Anda</small>
                         @else
                             @foreach ($tombol[$p->status] ?? [] as [$aksi, $teks, $kelas])
-                                <button type="submit" name="aksi" value="{{ $aksi }}" class="{{ $kelas }}">{{ $teks }}</button>
+                                <button type="submit" name="aksi" value="{{ $aksi }}" class="{{ $kelas }}"
+                                        @if ($aksi === 'reset') onclick="return confirm('Reset password akun ini? Password lamanya langsung tidak berlaku.')" @endif>{{ $teks }}</button>
                             @endforeach
                         @endif
                     </div>

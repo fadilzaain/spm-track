@@ -31,6 +31,11 @@
             ];
         }
 
+        // Menu akun untuk semua role
+        $menu['Akun'] = [
+            ['rute' => 'akun.password', 'cocok' => 'akun.password*', 'nama' => 'Ganti Password', 'ikon' => 'kunci'],
+        ];
+
         // Nomor urut dipakai untuk jeda animasi masuk tiap item sidebar (muncul satu per satu)
         $urut = 0;
     @endphp

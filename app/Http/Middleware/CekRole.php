@@ -8,10 +8,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CekRole
 {
-    /**
-     * Cara pakai di route: ->middleware('role:admin,manajemen')
-     * Hanya user dengan salah satu role yang disebutkan yang boleh lewat.
-     */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         $user = $request->user();

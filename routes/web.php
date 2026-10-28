@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\DaftarController;
+use App\Http\Controllers\Auth\GantiPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InputNilaiController;
@@ -29,9 +30,16 @@ Route::middleware('guest')->group(function () {
         ->name('daftar.proses');
 });
 
-// Hanya untuk yang SUDAH login dan akunnya aktif (akun yang dinonaktifkan admin langsung dikeluarkan)
-Route::middleware(['auth', 'aktif'])->group(function () {
+// Hanya untuk yang SUDAH login dan akunnya aktif (akun yang dinonaktifkan admin langsung dikeluarkan).
+// "wajib.ganti": akun dengan password sementara dari admin hanya bisa membuka Ganti Password dan Keluar.
+Route::middleware(['auth', 'aktif', 'wajib.ganti'])->group(function () {
     Route::post('/logout', [LoginController::class, 'keluar'])->name('logout');
+
+    // Ganti password sendiri: semua role. Dibatasi 6 percobaan per menit supaya password lama tidak bisa ditebak.
+    Route::get('/akun/password', [GantiPasswordController::class, 'form'])->name('akun.password');
+    Route::put('/akun/password', [GantiPasswordController::class, 'simpan'])
+        ->middleware('throttle:6,1')
+        ->name('akun.password.simpan');
 
     // Dashboard SPM (rekap kelengkapan pengisian). Filter lewat ?tahun=&bulan=&layanan=
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

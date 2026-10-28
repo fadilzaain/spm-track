@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('judul', 'Dashboard')
+@section('judul', 'SPM TRACK')
 
 @section('konten')
     @php

@@ -80,6 +80,7 @@
 
                         <button type="submit" class="tombol-utama blok">Masuk</button>
                         <p class="akses-alih">Belum punya akun? <label for="tab-daftar">Daftar</label></p>
+                        <p class="akses-alih">Lupa password? Minta admin mereset akun Anda.</p>
                     </form>
 
                     {{-- ----- Form Daftar ----- --}}

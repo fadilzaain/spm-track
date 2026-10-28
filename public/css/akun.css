@@ -1,0 +1,13 @@
+/* ===== Ganti password dan kotak password sementara ===== */
+.akun-kartu { max-width: 520px; display: grid; gap: 16px; }
+.akun-kartu form { display: grid; gap: 14px; }
+.akun-aksi { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Kotak password sementara di halaman Kelola Pengguna (hanya tampil sekali setelah reset) */
+.sandi-sementara { display: grid; gap: 8px; margin-bottom: 16px; }
+.sandi-kode {
+    justify-self: start; padding: 8px 14px; border-radius: 12px;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 20px; letter-spacing: 0.08em;
+    color: var(--ink); background: var(--surface-2); border: 1px dashed var(--line);
+    user-select: all;   /* sekali klik langsung terpilih semua, tinggal salin */
+}
