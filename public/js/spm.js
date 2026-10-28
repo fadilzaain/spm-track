@@ -1,4 +1,4 @@
-// ===== SPM Track: JavaScript kecil (tema, jam, tombol Esc) =====
+// ===== SPM Track: JavaScript kecil (tema, jam, tombol Esc, lihat password) =====
 
 const akar = document.documentElement;
 
@@ -27,9 +27,21 @@ if (elemenJam) {
     setInterval(tampilkanJam, 1000);
 }
 
-// 3. Tombol Esc menutup sidebar yang dibuka lewat tombol menu
+// 3. Tombol Esc menutup sidebar yang dibuka lewat tombol menu (di halaman login tidak ada sidebar, jadi aman)
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        document.getElementById('sidebar-toggle').checked = false;
+        const kotak = document.getElementById('sidebar-toggle');
+        if (kotak) kotak.checked = false;
     }
+});
+
+// 4. Tombol mata di kolom password: tampilkan/sembunyikan isinya
+document.addEventListener('click', (e) => {
+    const tombol = e.target.closest('[data-lihat-sandi]');
+    if (!tombol) return;
+
+    const kolom = tombol.parentElement.querySelector('input');
+    const tampil = kolom.type === 'password';
+    kolom.type = tampil ? 'text' : 'password';
+    tombol.toggleAttribute('data-tampil', tampil);
 });

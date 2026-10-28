@@ -1,25 +1,17 @@
 <!DOCTYPE html>
 <html lang="id" data-tema="gelap">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('judul', 'SPM Track') · RSUD Kabupaten Jombang</title>
-
-    {{-- Pasang tema tersimpan sebelum halaman digambar, supaya tidak berkedip --}}
-    <script>try { document.documentElement.dataset.tema = localStorage.getItem('tema') || 'gelap'; } catch (e) {}</script>
-
-    {{-- ?v=... mencegah browser memakai CSS/JS lama dari cache --}}
-    <link rel="stylesheet" href="{{ asset('css/spm.css') }}?v={{ filemtime(public_path('css/spm.css')) }}">
-    <script src="{{ asset('js/spm.js') }}?v={{ filemtime(public_path('js/spm.js')) }}" defer></script>
+    @include('layouts.kepala')
 </head>
 <body>
+    @use('App\Models\User')
+
     @php
         $pengguna  = auth()->user();
         $namaTampil = $pengguna->nama ?: $pengguna->username;
-        $labelRole = ['admin' => 'Admin', 'petugas_unit' => 'Petugas Unit', 'manajemen' => 'Manajemen'];
 
         // Daftar menu dibuat satu kali di sini, lalu digambar lewat perulangan (tidak ditulis berulang).
-        // rute = nama route, cocok = pola route yang menandai menu aktif
+        // rute = nama route, cocok = pola route yang menandai menu aktif, lencana = angka kecil di kanan menu (opsional)
         $menu = [
             'Pemantauan' => [
                 ['rute' => 'dashboard',    'cocok' => 'dashboard',     'nama' => 'Dashboard',   'ikon' => 'dashboard'],
@@ -30,6 +22,14 @@
                 ['rute' => 'pencapaian',   'cocok' => 'pencapaian*',   'nama' => 'Pencapaian',  'ikon' => 'target'],
             ],
         ];
+
+        // Menu khusus admin: lencananya menunjukkan jumlah pendaftar yang menunggu persetujuan
+        if ($pengguna->isAdmin()) {
+            $menu['Administrasi'] = [
+                ['rute' => 'pengguna', 'cocok' => 'pengguna*', 'nama' => 'Kelola Pengguna', 'ikon' => 'pengguna',
+                 'lencana' => User::where('status', User::STATUS_MENUNGGU)->count()],
+            ];
+        }
 
         // Nomor urut dipakai untuk jeda animasi masuk tiap item sidebar (muncul satu per satu)
         $urut = 0;
@@ -44,7 +44,7 @@
 
     <aside class="sidebar" aria-label="Menu samping">
         <a class="merek masuk" style="--i: {{ $urut++ }}" href="{{ route('dashboard') }}">
-            <span class="merek-tanda">SPM</span>
+            <x-logo />
             <span class="merek-teks">
                 <strong>SPM Track</strong>
                 <small>RSUD Kabupaten Jombang</small>
@@ -61,6 +61,9 @@
                        href="{{ route($m['rute']) }}" @if ($aktif) aria-current="page" @endif>
                         <span class="ikon-kotak"><x-ikon :nama="$m['ikon']" /></span>
                         {{ $m['nama'] }}
+                        @if (! empty($m['lencana']))
+                            <span class="pil nada-warn lencana">{{ $m['lencana'] }}</span>
+                        @endif
                     </a>
                 @endforeach
             </nav>
@@ -82,7 +85,7 @@
                 <span class="avatar">{{ mb_strtoupper(mb_substr($namaTampil, 0, 2)) }}</span>
                 <span class="pengguna-info">
                     <strong>{{ $namaTampil }}</strong>
-                    <small>{{ $labelRole[$pengguna->role] ?? $pengguna->role }}</small>
+                    <small>{{ User::LABEL_ROLE[$pengguna->role] ?? $pengguna->role }}</small>
                 </span>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

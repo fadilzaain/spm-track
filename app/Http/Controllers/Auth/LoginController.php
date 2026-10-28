@@ -3,17 +3,34 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\JenisPelayanan;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class LoginController extends Controller
 {
-    // Tampilkan halaman login
-    public function tampilkanForm(): View
+    /**
+     * Satu halaman untuk Masuk dan Daftar (dua tab). Rute /login dan /daftar memakai method ini,
+     * bedanya hanya tab yang terbuka lebih dulu.
+     */
+    public function tampilkanForm(Request $request): View
     {
-        return view('auth.login');
+        $galat = $request->session()->get('errors');
+
+        // Kalau login baru saja gagal, tetap di tab Masuk. Kalau pendaftaran gagal, buka tab Daftar.
+        $galatMasuk = $galat && $galat->getBag('default')->any();
+        $tab = ! $galatMasuk && ($request->routeIs('daftar') || ($galat && $galat->hasBag('daftar')))
+            ? 'daftar'
+            : 'masuk';
+
+        return view('auth.akses', [
+            'tab' => $tab,
+            'daftarLayanan' => JenisPelayanan::orderBy('id')->pluck('nama_pelayanan', 'id')->all(),
+        ]);
     }
 
     // Proses login pakai username dan password
@@ -27,17 +44,23 @@ class LoginController extends Controller
             'password.required' => 'Password wajib diisi.',
         ]);
 
-        // Auth::attempt mencocokkan kolom username dan password (hash) di tabel users
-        if (Auth::attempt($kredensial, $request->boolean('ingat_saya'))) {
+        // Hanya akun berstatus "aktif" yang bisa masuk
+        if (Auth::attempt($kredensial + ['status' => User::STATUS_AKTIF], $request->boolean('ingat_saya'))) {
             // Ganti ID sesi setelah login supaya aman dari session fixation
             $request->session()->regenerate();
 
             return redirect()->intended(route('dashboard'));
         }
 
-        // Jika gagal login: balik ke form, username tetap terisi, password dikosongkan
-        return back()
-            ->withErrors(['username' => 'Username atau password salah.'])
+        // Gagal: kalau password-nya benar tapi akun belum aktif, beri tahu alasannya.
+        // Pesan khusus ini hanya muncul untuk yang tahu password, jadi tidak membocorkan data.
+        $user = User::where('username', $kredensial['username'])->first();
+        $pesan = ($user && Hash::check($kredensial['password'], $user->password))
+            ? (User::PESAN_STATUS[$user->status] ?? null)
+            : null;
+
+        return redirect()->route('login')
+            ->withErrors(['username' => $pesan ?? 'Username atau password salah.'])
             ->onlyInput('username');
     }
 

@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Auth\DaftarController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InputNilaiController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PencapaianController;
+use App\Http\Controllers\PenggunaController;
 use Illuminate\Support\Facades\Route;
 
 // Halaman utama langsung diarahkan ke dashboard
@@ -12,16 +14,23 @@ Route::redirect('/', '/dashboard');
 
 // Hanya untuk yang BELUM login
 Route::middleware('guest')->group(function () {
+    // /login dan /daftar menampilkan halaman yang sama (dua tab), beda di tab yang terbuka dulu
     Route::get('/login', [LoginController::class, 'tampilkanForm'])->name('login');
+    Route::get('/daftar', [LoginController::class, 'tampilkanForm'])->name('daftar');
 
     // Dibatasi 10 percobaan per menit untuk mencegah tebak password
     Route::post('/login', [LoginController::class, 'proses'])
         ->middleware('throttle:10,1')
         ->name('login.proses');
+
+    // Pendaftaran dibatasi 5 kali per 10 menit per alamat IP supaya tidak dibanjiri akun palsu
+    Route::post('/daftar', [DaftarController::class, 'proses'])
+        ->middleware('throttle:5,10')
+        ->name('daftar.proses');
 });
 
-// Hanya untuk yang SUDAH login
-Route::middleware('auth')->group(function () {
+// Hanya untuk yang SUDAH login dan akunnya aktif (akun yang dinonaktifkan admin langsung dikeluarkan)
+Route::middleware(['auth', 'aktif'])->group(function () {
     Route::post('/logout', [LoginController::class, 'keluar'])->name('logout');
 
     // Dashboard SPM (rekap kelengkapan pengisian). Filter lewat ?tahun=&bulan=&layanan=
@@ -43,4 +52,10 @@ Route::middleware('auth')->group(function () {
     // Laporan rekap: semua role boleh melihat dan mengunduh. Ekspor Excel mengikuti filter (?tahun=&layanan=)
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
     Route::get('/laporan/ekspor', [LaporanController::class, 'ekspor'])->name('laporan.ekspor');
+
+    // Kelola pengguna: khusus admin (setujui pendaftar baru, ubah role, nonaktifkan akun)
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna');
+        Route::patch('/pengguna/{pengguna}', [PenggunaController::class, 'perbarui'])->name('pengguna.perbarui');
+    });
 });
