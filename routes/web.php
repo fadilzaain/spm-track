@@ -11,8 +11,9 @@ use App\Http\Controllers\PenggunaController;
 use Illuminate\Support\Facades\Route;
 
 // Halaman utama langsung diarahkan ke dashboard
-Route::redirect('/', '/dashboard');
-
+Route::get('/', function () {
+    return redirect()->route('dashboard');
+});
 // Hanya untuk yang BELUM login
 Route::middleware('guest')->group(function () {
     // /login dan /daftar menampilkan halaman yang sama (dua tab), beda di tab yang terbuka dulu

@@ -14,7 +14,7 @@ return new class extends Migration
 
         // Ubah kolom lama dan tambah kolom baru
         Schema::table('users', function (Blueprint $table) {
-            // Admin & Manajemen tidak terikat satu layanan, jadi boleh kosong
+            // Admin & Manajemen tidak terikat satu layanan, boleh kosong
             $table->integer('jenis_pelayanan_id')->nullable()->change();
             $table->string('nama', 150)->nullable()->after('username');
             // Role: admin / petugas_unit / manajemen
