@@ -1,0 +1,144 @@
+/* ===== SPM Track: tampilan dashboard (hero ringkas, KPI, bar, heatmap, tabel standar) ===== */
+
+/* Animasi bar tumbuh dan donut menyapu dari 0% */
+@keyframes tumbuh { from { transform: scaleX(0); } }
+@keyframes sapu { from { --a: 0%; --b: 0%; } }
+
+/* Warna status: satu variabel --warna dipakai bar, titik legenda, dan donut */
+.bar-lengkap { --warna: var(--ok); }
+.bar-sebagian { --warna: var(--warn); }
+.bar-belum { --warna: var(--bad); }
+
+/* ===== Hero ringkas: lebih pendek dari hero halaman lain ===== */
+.kepala-ringkas { padding: 16px 22px; align-items: center; }
+.kepala-ringkas h1 { font-size: 24px; }
+
+/* ===== Baris ringkasan: 4 kartu KPI + 1 kartu komposisi ===== */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.4fr); gap: 14px; }
+
+.kartu { padding: 16px 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; transition: transform 0.3s var(--ease), border-color 0.3s; }
+.kartu:hover { transform: translateY(-2px); border-color: color-mix(in oklab, var(--tone, var(--accent)) 40%, var(--line)); }
+.kartu .ikon-kotak { width: 32px; height: 32px; border-radius: 10px; }
+.kartu .ikon { width: 18px; height: 18px; }
+.kartu-kepala { display: flex; align-items: center; gap: 10px; }
+.kartu-label { color: var(--ink-2); font-size: 13px; font-weight: 500; }
+.kartu-angka { font: 600 30px/1 var(--font); letter-spacing: -0.01em; }
+.nada-utama .kartu-angka { color: var(--accent); }
+.kartu .bar-trek { width: 100%; }
+.kartu .badge { margin-top: auto; white-space: normal; line-height: 1.3; }   /* badge turun ke dasar kartu supaya semua kartu rata bawah */
+
+/* Kartu komposisi: donut kecil di kiri, legenda di kanan */
+.kartu-komposisi { gap: 10px; }
+.komposisi-isi { display: flex; align-items: center; gap: 18px; width: 100%; }
+.donut {
+    width: 92px; height: 92px; flex: none; border-radius: 50%; display: grid; place-items: center;
+    background: conic-gradient(var(--ok) 0 var(--a), var(--warn) var(--a) var(--b), var(--bad) var(--b) 100%);
+    animation: sapu 1.1s var(--ease) both;
+}
+.donut-isi { width: 64px; height: 64px; border-radius: 50%; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.donut-isi strong { font: 600 22px/1 var(--font); }
+.donut-isi span { font-size: 10px; color: var(--ink-2); margin-top: 2px; }
+.legenda { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; max-width: 230px; font-size: 12.5px; }
+.legenda li { display: flex; align-items: center; gap: 8px; }
+.legenda b { margin-left: auto; font-weight: 600; }
+.titik { width: 9px; height: 9px; flex: none; border-radius: 50%; display: inline-block; background: var(--warna); }
+
+/* ===== Bar dan heatmap: dua panel berdampingan, baris keduanya setinggi sama ===== */
+.baris-utama { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 14px; align-items: stretch; }
+.panel-matriks { padding: 18px 20px 20px; }
+.panel-matriks .panel-kepala { margin-bottom: 12px; }
+
+/* Satu pola grid dipakai bar dan heatmap: kolom nama pelayanan lebarnya sama, tinggi baris sama */
+.matriks { --baris: 26px; --jeda: 2px; --label: 172px; display: flex; flex-direction: column; gap: var(--jeda); }
+.matriks-bar { --kolom-jeda: 12px; min-width: 340px; }
+.matriks-heat { --kolom-jeda: 2px; min-width: 560px; }
+.matriks-bar :is(.matriks-judul, .matriks-baris) { grid-template-columns: var(--label) minmax(0, 1fr) 48px; }
+.matriks-heat :is(.matriks-judul, .matriks-baris) { grid-template-columns: var(--label) repeat(12, minmax(0, 1fr)); }
+
+.matriks-judul, .matriks-baris { display: grid; column-gap: var(--kolom-jeda); align-items: center; }
+.matriks-judul { height: 20px; font-size: 11px; font-weight: 500; letter-spacing: 0.03em; color: var(--ink-2); }
+.matriks-judul > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.matriks-heat .matriks-judul > span + span { text-align: center; }
+.matriks-judul .aktif { color: var(--accent); font-weight: 600; }
+.rata-kanan { text-align: right; }
+.matriks-baris { height: var(--baris); }
+
+.matriks-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px; font-size: 12.5px; color: inherit; text-decoration: none; }
+a.matriks-label:hover { color: var(--accent); }
+
+/* Bar status */
+.bar-trek { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.bar-isi { display: block; height: 100%; min-width: 2px; border-radius: 999px; background: var(--warna, var(--accent)); box-shadow: 0 0 10px color-mix(in oklab, var(--warna, var(--accent)) 50%, transparent); transform-origin: left; animation: tumbuh 0.9s var(--ease) both; }
+.bar-nilai { text-align: right; color: var(--ink-2); font-size: 12px; }
+
+/* Heatmap */
+.heat-sel {
+    height: var(--baris); border-radius: 6px; display: grid; place-items: center; font-size: 11px; color: var(--ink);
+    background: color-mix(in oklab, var(--accent) calc(var(--p) * 100%), var(--surface-2));
+    transition: transform 0.2s var(--ease);
+}
+.heat-sel:hover { transform: scale(1.12); position: relative; z-index: 1; }
+.heat-sel[data-tinggi] { color: var(--on-accent); font-weight: 600; }
+.heat-sel.aktif { outline: 1.5px solid color-mix(in oklab, var(--ink) 55%, transparent); outline-offset: 0; }
+
+/* Skala warna heatmap (di kepala panel) */
+.skala { display: inline-flex; align-items: center; gap: 8px; }
+.skala i { width: 90px; height: 8px; border-radius: 999px; background: linear-gradient(90deg, var(--surface-2), var(--accent)); }
+
+/* ===== Tabel standar dan nilai ===== */
+.panel-tabel { scroll-margin-top: 20px; }
+.judul-tabel { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* area gulir di tabel */
+.tabel-spm-gulir { overflow: auto; max-height: clamp(340px, calc(100vh - 170px), 780px); border: 1px solid var(--line); border-radius: 14px; }
+.tabel-spm { width: 100%; min-width: 860px; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+.k-layanan { width: 17%; }
+.k-indikator { width: 26%; }
+.k-frekuensi { width: 104px; }
+.k-nilai { width: 15%; }
+
+.tabel-spm th {
+    position: sticky; top: 0; z-index: 2; background: var(--surface-2); text-align: left; padding: 10px 14px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-2);
+    box-shadow: inset 0 -1px 0 var(--line);
+}
+.tabel-spm td {
+    padding: 8px 14px; vertical-align: top; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere;
+    border-top: 1px solid color-mix(in oklab, var(--line) 70%, transparent);
+}
+
+/* Garis pemisah bertingkatn */
+.tabel-spm tr.awal-indikator td { border-top-color: var(--line); }
+.tabel-spm tr.awal-layanan td { border-top: 2px solid color-mix(in oklab, var(--accent) 35%, var(--line)); }
+.tabel-spm tbody:first-of-type tr:first-child td { border-top: 0; }   /* baris paling atas tidak perlu garis */
+
+.sel-layanan-grup { font-weight: 600; background: color-mix(in oklab, var(--accent) 4%, transparent); border-right: 1px solid var(--line); }
+.sel-indikator-grup { font-weight: 500; }
+.tabel-spm tbody tr:hover td:not([rowspan]) { background: color-mix(in oklab, var(--accent) 6%, transparent); }
+
+/* "Belum diisi" */
+.pil-kosong { color: var(--ink-2); background: transparent; border: 1px dashed var(--line); }
+
+/* ===== Layar lebih sempit ===== */
+@media (max-width: 1180px) {
+    .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kartu-komposisi { grid-column: 1 / -1; }
+}
+
+@media (max-width: 1000px) {
+    .baris-utama { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 860px) {
+    .kepala-ringkas { padding: 16px 18px; }
+    .kepala-ringkas h1 { font-size: 22px; }
+    .tabel-spm-gulir { max-height: 70vh; }
+}
+
+@media (max-width: 480px) {
+    .panel-matriks { padding: 16px 14px; }
+    .matriks { --label: 118px; }
+    .matriks-bar { min-width: 0; }
+    .matriks-heat { min-width: 470px; }
+    .kartu-angka { font-size: 26px; }
+}

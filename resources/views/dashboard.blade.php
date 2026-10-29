@@ -24,7 +24,7 @@
         // Teks dan warna badge selisih kelengkapan dari bulan lalu
         $teksSelisih = is_null($selisih)
             ? 'awal tahun'
-            : ($selisih >= 0 ? '+' : '').number_format($selisih, 1, ',', '.').' poin dari bulan lalu';
+            : ($selisih >= 0 ? '+' : '').number_format($selisih, 1, ',', '.').' poin vs bulan lalu';
         $badgeSelisih = is_null($selisih) ? '' : ($selisih >= 0 ? 'badge-ok' : 'badge-bad');
 
         // Empat kartu KPI dibuat dari satu daftar ini lalu digambar lewat perulangan
@@ -43,27 +43,35 @@
         $n = max(count($layanan), 1);
         $a = round($jmlLengkap / $n * 100, 2);
         $b = round(($jmlLengkap + $jmlSebagian) / $n * 100, 2);
+
+        // Tabel standar dikelompokkan: pelayanan -> indikator -> standar.
+        // Tujuannya supaya sel pelayanan dan indikator bisa digabung (rowspan), tidak diulang atau dikosongkan per baris
+        $kelompokTabel = collect($tabel)->groupBy('layanan_id');
+        $jumlahBarisTabel = count($tabel);
+        $jumlahTerisiTabel = collect($tabel)->whereNotNull('nilai')->count();
     @endphp
 
-    {{-- ===== Hero: sapaan + jam + filter periode ===== --}}
-    <section class="kepala-halaman">
+    {{-- ===== Hero ringkas: sapaan, jam, filter periode, tombol isi nilai ===== --}}
+    <section class="kepala-halaman kepala-ringkas">
         <div>
             <h1>{{ $salam }}, <span class="nama">{{ $pengguna->nama ?: $pengguna->username }}</span></h1>
             <p class="redup">Kelengkapan pengisian Standar Pelayanan Minimal · {{ $namaBulan[$bulan] }} {{ $tahun }}</p>
+        </div>
+
+        <div class="aksi-kepala">
+            <form method="GET" action="{{ route('dashboard') }}" class="filter">
+                <span class="chip-jam"><x-ikon nama="jam" /><time data-jam>--</time></span>
+                <x-pilih nama="tahun" label="Tahun" :opsi="array_combine($daftarTahun, $daftarTahun)" :nilai="$tahun" />
+                <x-pilih nama="bulan" label="Bulan" :opsi="$namaBulan" :nilai="$bulan" />
+            </form>
 
             @if ($bisaIsi && $jmlLengkap < count($layanan))
                 <a class="tombol-utama" href="{{ route('input.nilai', $periode) }}">Isi nilai {{ $namaBulan[$bulan] }}</a>
             @endif
         </div>
-
-        <form method="GET" action="{{ route('dashboard') }}" class="filter">
-            <span class="chip-jam"><x-ikon nama="jam" /><time data-jam>--</time></span>
-            <x-pilih nama="tahun" label="Tahun" :opsi="array_combine($daftarTahun, $daftarTahun)" :nilai="$tahun" />
-            <x-pilih nama="bulan" label="Bulan" :opsi="$namaBulan" :nilai="$bulan" />
-        </form>
     </section>
 
-    {{-- ===== Kartu KPI ===== --}}
+    {{-- ===== Baris ringkasan: 4 kartu KPI + 1 kartu komposisi status (donut kecil) ===== --}}
     <section class="kpi-grid">
         @foreach ($kpi as $k)
             <article class="kartu nada-{{ $k['nada'] }}">
@@ -81,41 +89,15 @@
                 <span class="badge {{ $k['badgeKelas'] }}">{{ $k['badge'] }}</span>
             </article>
         @endforeach
-    </section>
 
-    {{-- ===== Bar kelengkapan per pelayanan + donut komposisi ===== --}}
-    <section class="baris-dua">
-        <article class="panel">
-            <header class="panel-kepala">
-                <h2>Kelengkapan per pelayanan</h2>
-                <span class="redup">Klik nama pelayanan untuk melihat standarnya</span>
-            </header>
+        <article class="kartu kartu-komposisi">
+            <span class="kartu-label">Komposisi status pelayanan</span>
 
-            <ul class="bar-list">
-                @foreach ($layanan as $l)
-                    <li class="bar-baris">
-                        {{-- Klik nama: tabel di bawah langsung difilter ke pelayanan ini --}}
-                        <a class="bar-label" title="{{ $l['nama'] }}"
-                           href="{{ route('dashboard', $periode + ['layanan' => $l['id']]) }}#tabel">{{ $l['nama'] }}</a>
-                        <span class="bar-trek">
-                            <span class="bar-isi bar-{{ $l['status'] }}" style="width: {{ number_format($l['persen'], 1, '.', '') }}%"></span>
-                        </span>
-                        <span class="bar-nilai">{{ $l['terisi'] }}/{{ $l['total'] }}</span>
-                    </li>
-                @endforeach
-            </ul>
-        </article>
-
-        <article class="panel">
-            <header class="panel-kepala">
-                <h2>Komposisi status pelayanan</h2>
-            </header>
-
-            <div class="donut-wadah">
+            <div class="komposisi-isi">
                 <div class="donut" style="--a: {{ $a }}%; --b: {{ $b }}%">
                     <div class="donut-isi">
                         <strong>{{ $jmlLengkap }}</strong>
-                        <span>dari {{ count($layanan) }} lengkap</span>
+                        <span>dari {{ count($layanan) }}</span>
                     </div>
                 </div>
 
@@ -128,42 +110,79 @@
         </article>
     </section>
 
-    {{-- ===== Heatmap pelayanan x bulan ===== --}}
-    <section class="panel">
-        <header class="panel-kepala">
-            <h2>Peta kelengkapan sepanjang {{ $tahun }}</h2>
-            <span class="redup">Persentase standar terisi, makin pekat makin lengkap</span>
-        </header>
+    {{-- ===== Baris utama: bar kelengkapan (kiri) dan peta kelengkapan setahun (kanan), tinggi barisnya dibuat sama ===== --}}
+    <section class="baris-utama">
+        <article class="panel panel-matriks">
+            <header class="panel-kepala">
+                <h2>Kelengkapan per pelayanan</h2>
+                <span class="redup">Klik nama untuk melihat standarnya</span>
+            </header>
 
-        <div class="tabel-gulir">
-            <div class="heat">
-                <div class="heat-baris heat-kepala">
-                    <span></span>
-                    @foreach ($namaBulanPendek as $no => $pendek)
-                        <span class="{{ $no === $bulan ? 'aktif' : '' }}">{{ $pendek }}</span>
+            <div class="tabel-gulir">
+                <div class="matriks matriks-bar">
+                    <div class="matriks-judul">
+                        <span>Pelayanan</span>
+                        <span>Progres {{ $namaBulan[$bulan] }}</span>
+                        <span class="rata-kanan">Terisi</span>
+                    </div>
+
+                    @foreach ($layanan as $l)
+                        <div class="matriks-baris">
+                            {{-- Klik nama: tabel di bawah langsung difilter ke pelayanan ini --}}
+                            <a class="matriks-label" title="{{ $l['nama'] }}"
+                               href="{{ route('dashboard', $periode + ['layanan' => $l['id']]) }}#tabel">{{ $l['nama'] }}</a>
+                            <span class="bar-trek">
+                                <span class="bar-isi bar-{{ $l['status'] }}" style="width: {{ number_format($l['persen'], 1, '.', '') }}%"></span>
+                            </span>
+                            <span class="bar-nilai">{{ $l['terisi'] }}/{{ $l['total'] }}</span>
+                        </div>
                     @endforeach
                 </div>
-
-                @foreach ($layanan as $l)
-                    <div class="heat-baris">
-                        <span class="heat-label" title="{{ $l['nama'] }}">{{ $l['nama'] }}</span>
-                        @for ($m = 1; $m <= 12; $m++)
-                            @php $p = $heatmap[$l['id']][$m] ?? 0; @endphp
-                            <span class="heat-sel {{ $m === $bulan ? 'aktif' : '' }}"
-                                  style="--p: {{ number_format($p, 2, '.', '') }}"
-                                  @if ($p >= 0.6) data-tinggi @endif
-                                  title="{{ $l['nama'] }} · {{ $namaBulan[$m] }}: {{ round($p * 100) }}%">{{ $p > 0 ? round($p * 100) : '' }}</span>
-                        @endfor
-                    </div>
-                @endforeach
             </div>
-        </div>
+        </article>
+
+        <article class="panel panel-matriks">
+            <header class="panel-kepala">
+                <h2>Peta kelengkapan {{ $tahun }}</h2>
+
+                {{-- Skala warna heatmap: makin pekat makin lengkap --}}
+                <span class="skala"><small>0%</small><i></i><small>100%</small></span>
+            </header>
+
+            <div class="tabel-gulir">
+                <div class="matriks matriks-heat">
+                    <div class="matriks-judul">
+                        <span>Pelayanan</span>
+                        @foreach ($namaBulanPendek as $no => $pendek)
+                            <span class="{{ $no === $bulan ? 'aktif' : '' }}">{{ $pendek }}</span>
+                        @endforeach
+                    </div>
+
+                    @foreach ($layanan as $l)
+                        <div class="matriks-baris">
+                            <span class="matriks-label" title="{{ $l['nama'] }}">{{ $l['nama'] }}</span>
+                            @for ($m = 1; $m <= 12; $m++)
+                                @php $p = $heatmap[$l['id']][$m] ?? 0; @endphp
+                                <span class="heat-sel {{ $m === $bulan ? 'aktif' : '' }}"
+                                      style="--p: {{ number_format($p, 2, '.', '') }}"
+                                      @if ($p >= 0.6) data-tinggi @endif
+                                      title="{{ $l['nama'] }} · {{ $namaBulan[$m] }}: {{ round($p * 100) }}%">{{ $p > 0 ? round($p * 100) : '' }}</span>
+                            @endfor
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </article>
     </section>
 
     {{-- ===== Tabel standar + nilai bulan terpilih ===== --}}
-    <section class="panel" id="tabel">
+    <section class="panel panel-tabel" id="tabel">
         <header class="panel-kepala">
-            <h2>Daftar standar dan nilai {{ $namaBulan[$bulan] }} {{ $tahun }}</h2>
+            <div class="judul-tabel">
+                <h2>Daftar standar dan nilai {{ $namaBulan[$bulan] }} {{ $tahun }}</h2>
+                <span class="pil">{{ $jumlahBarisTabel }} standar</span>
+                <span class="pil badge-ok">{{ $jumlahTerisiTabel }} terisi</span>
+            </div>
 
             {{-- Filter pelayanan khusus tabel, tahun dan bulan ikut dibawa --}}
             <form method="GET" action="{{ route('dashboard') }}#tabel" class="filter">
@@ -173,8 +192,17 @@
             </form>
         </header>
 
-        <div class="tabel-gulir tabel-tinggi">
-            <table class="tabel">
+        {{-- Satu area gulir saja: tingginya mengikuti tinggi layar, header kolom tetap menempel di atas --}}
+        <div class="tabel-spm-gulir">
+            <table class="tabel-spm">
+                <colgroup>
+                    <col class="k-layanan">
+                    <col class="k-indikator">
+                    <col>
+                    <col class="k-frekuensi">
+                    <col class="k-nilai">
+                </colgroup>
+
                 <thead>
                     <tr>
                         <th>Pelayanan</th>
@@ -184,31 +212,52 @@
                         <th>Nilai</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @php $layananLalu = null; $indikatorLalu = null; @endphp
-                    @forelse ($tabel as $r)
-                        <tr class="{{ $r['layanan_id'] !== $layananLalu ? 'baris-awal' : '' }}">
-                            {{-- Nama pelayanan dan indikator hanya ditulis di baris pertama kelompoknya --}}
-                            <td class="sel-layanan">{{ $r['layanan_id'] !== $layananLalu ? $r['layanan'] : '' }}</td>
-                            <td>{{ $r['indikator_id'] !== $indikatorLalu ? $r['indikator'] : '' }}</td>
-                            <td>{{ $r['standar'] }}</td>
-                            <td><span class="pil">{{ ucfirst($r['frekuensi']) }}</span></td>
-                            <td>
-                                @if (! is_null($r['nilai']))
-                                    <span class="nilai">{{ $r['nilai'] }}</span>
-                                @else
-                                    <span class="pil pil-belum">Belum diisi</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @php
-                            $layananLalu = $r['layanan_id'];
-                            $indikatorLalu = $r['indikator_id'];
-                        @endphp
-                    @empty
+
+                @forelse ($kelompokTabel as $barisLayanan)
+                    @php
+                        // Per pelayanan: kelompokkan lagi per indikator
+                        $perIndikator = $barisLayanan->groupBy('indikator_id');
+                        $layananBaru = true;
+                    @endphp
+
+                    <tbody>
+                        @foreach ($perIndikator as $barisIndikator)
+                            @php $indikatorBaru = true; @endphp
+
+                            @foreach ($barisIndikator as $r)
+                                {{-- awal-layanan = garis tebal pemisah pelayanan, awal-indikator = garis sedang pemisah indikator --}}
+                                <tr class="{{ $layananBaru ? 'awal-layanan' : ($indikatorBaru ? 'awal-indikator' : '') }}">
+                                    @if ($layananBaru)
+                                        <td class="sel-layanan-grup" rowspan="{{ $barisLayanan->count() }}">{{ $r['layanan'] }}</td>
+                                    @endif
+
+                                    @if ($indikatorBaru)
+                                        <td class="sel-indikator-grup" rowspan="{{ $barisIndikator->count() }}">{{ $r['indikator'] }}</td>
+                                    @endif
+
+                                    <td>{{ $r['standar'] }}</td>
+                                    <td><span class="pil">{{ ucfirst($r['frekuensi']) }}</span></td>
+                                    <td>
+                                        @if (! is_null($r['nilai']))
+                                            <span class="nilai">{{ $r['nilai'] }}</span>
+                                        @else
+                                            <span class="pil pil-kosong">Belum diisi</span>
+                                        @endif
+                                    </td>
+                                </tr>
+
+                                @php
+                                    $layananBaru = false;
+                                    $indikatorBaru = false;
+                                @endphp
+                            @endforeach
+                        @endforeach
+                    </tbody>
+                @empty
+                    <tbody>
                         <tr><td colspan="5" class="redup">Belum ada standar untuk ditampilkan.</td></tr>
-                    @endforelse
-                </tbody>
+                    </tbody>
+                @endforelse
             </table>
         </div>
     </section>
