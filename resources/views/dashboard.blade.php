@@ -44,9 +44,9 @@
         $a = round($jmlLengkap / $n * 100, 2);
         $b = round(($jmlLengkap + $jmlSebagian) / $n * 100, 2);
 
-        // Tabel standar dikelompokkan: pelayanan -> indikator -> standar.
+        // Tabel standar dikelompokkan: pelayanan -> indikator -> standar (helper yang sama dengan halaman laporan).
         // Tujuannya supaya sel pelayanan dan indikator bisa digabung (rowspan), tidak diulang atau dikosongkan per baris
-        $kelompokTabel = collect($tabel)->groupBy('layanan_id');
+        $kelompokTabel = \App\Support\KelompokStandar::susun($tabel);
         $jumlahBarisTabel = count($tabel);
         $jumlahTerisiTabel = collect($tabel)->whereNotNull('nilai')->count();
     @endphp
@@ -74,20 +74,7 @@
     {{-- ===== Baris ringkasan: 4 kartu KPI + 1 kartu komposisi status (donut kecil) ===== --}}
     <section class="kpi-grid">
         @foreach ($kpi as $k)
-            <article class="kartu nada-{{ $k['nada'] }}">
-                <header class="kartu-kepala">
-                    <span class="ikon-kotak"><x-ikon :nama="$k['ikon']" /></span>
-                    <span class="kartu-label">{{ $k['label'] }}</span>
-                </header>
-
-                <strong class="kartu-angka">{{ $k['angka'] }}</strong>
-
-                @isset($k['bar'])
-                    <span class="bar-trek"><span class="bar-isi" style="width: {{ number_format($k['bar'], 1, '.', '') }}%"></span></span>
-                @endisset
-
-                <span class="badge {{ $k['badgeKelas'] }}">{{ $k['badge'] }}</span>
-            </article>
+            <x-kartu-kpi :k="$k" />
         @endforeach
 
         <article class="kartu kartu-komposisi">
@@ -213,26 +200,23 @@
                     </tr>
                 </thead>
 
-                @forelse ($kelompokTabel as $barisLayanan)
-                    @php
-                        // Per pelayanan: kelompokkan lagi per indikator
-                        $perIndikator = $barisLayanan->groupBy('indikator_id');
-                        $layananBaru = true;
-                    @endphp
-
+                @forelse ($kelompokTabel as $g)
                     <tbody>
-                        @foreach ($perIndikator as $barisIndikator)
-                            @php $indikatorBaru = true; @endphp
+                        @foreach ($g['indikator'] as $i)
+                            @foreach ($i['baris'] as $r)
+                                @php
+                                    // Baris pertama pelayanan = baris pertama indikator pertama
+                                    $awalLayanan = $loop->parent->first && $loop->first;
+                                @endphp
 
-                            @foreach ($barisIndikator as $r)
                                 {{-- awal-layanan = garis tebal pemisah pelayanan, awal-indikator = garis sedang pemisah indikator --}}
-                                <tr class="{{ $layananBaru ? 'awal-layanan' : ($indikatorBaru ? 'awal-indikator' : '') }}">
-                                    @if ($layananBaru)
-                                        <td class="sel-layanan-grup" rowspan="{{ $barisLayanan->count() }}">{{ $r['layanan'] }}</td>
+                                <tr class="{{ $awalLayanan ? 'awal-layanan' : ($loop->first ? 'awal-indikator' : '') }}">
+                                    @if ($awalLayanan)
+                                        <td class="sel-layanan-grup" rowspan="{{ $g['jumlah'] }}">{{ $g['nama'] }}</td>
                                     @endif
 
-                                    @if ($indikatorBaru)
-                                        <td class="sel-indikator-grup" rowspan="{{ $barisIndikator->count() }}">{{ $r['indikator'] }}</td>
+                                    @if ($loop->first)
+                                        <td class="sel-indikator-grup" rowspan="{{ $i['jumlah'] }}">{{ $i['nama'] }}</td>
                                     @endif
 
                                     <td>{{ $r['standar'] }}</td>
@@ -245,11 +229,6 @@
                                         @endif
                                     </td>
                                 </tr>
-
-                                @php
-                                    $layananBaru = false;
-                                    $indikatorBaru = false;
-                                @endphp
                             @endforeach
                         @endforeach
                     </tbody>

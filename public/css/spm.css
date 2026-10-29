@@ -1,4 +1,4 @@
-/* ===== SPM Track: tema gelap/terang, sidebar melayang, dashboard ===== */
+/* ===== SPM Track ===== */
 
 /* Properti yang didaftarkan supaya donut bisa dianimasikan (menyapu dari 0%) */
 @property --a { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
@@ -220,7 +220,7 @@ body:has(.sidebar-zona:hover, .sidebar:hover, .sidebar-toggle:checked) {
 .pengguna .tombol-ikon { width: clamp(30px, 4.2vh, 36px); height: clamp(30px, 4.2vh, 36px); }
 
 /* ===== Halaman ===== */
-.halaman { max-width: 1320px; margin: 0 auto; padding: 28px 36px 56px; display: flex; flex-direction: column; gap: 22px; }
+.halaman { max-width: 1320px; min-height: 100vh; min-height: 100dvh; margin: 0 auto; padding: 28px 36px 28px; display: flex; flex-direction: column; gap: 22px; }
 .halaman > * { animation: naik 0.6s var(--ease) both; }
 @keyframes naik { from { opacity: 0; transform: translateY(14px); } }
 
@@ -297,3 +297,14 @@ body:has(.sidebar-zona:hover, .sidebar:hover, .sidebar-toggle:checked) {
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ===== Footer semua halaman: menempel di dasar layar walau isi halaman pendek ===== */
+.kaki-situs { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--line); text-align: center; font-size: 12px; letter-spacing: 0.03em; color: var(--ink-2); }
+.kaki-situs strong { font-weight: 600; color: var(--accent); }
+
+/* Halaman tamu (Masuk/Daftar): footer melayang di dasar panel form, tanpa garis atas */
+.kaki-tamu { position: fixed; z-index: 2; right: 0; bottom: 12px; width: calc(100% / 2.05); margin: 0; padding: 0; border-top: 0; pointer-events: none; }
+.akses .akses-panel { padding-bottom: 44px; }   /* sisakan ruang supaya form tidak tertimpa footer */
+@media (max-width: 900px) { .kaki-tamu { left: 0; width: auto; } }
+
+/* Developer : Fadilzaain */

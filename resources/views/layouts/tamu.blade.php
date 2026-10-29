@@ -11,5 +11,7 @@
     </button>
 
     @yield('konten')
+
+    @include('layouts.kaki', ['kelas' => 'kaki-tamu'])
 </body>
 </html>

@@ -9,7 +9,7 @@
 <link rel="preload" href="{{ asset('fonts/ibm-plex-sans-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
 
 {{-- ?v=... cegah browser memakai CSS/JS lama dari cache --}}
-@foreach (['css/spm.css', 'css/dashboard.css', 'css/akses.css', 'css/akun.css'] as $css)
+@foreach (['css/spm.css', 'css/dashboard.css', 'css/laporan.css', 'css/akses.css', 'css/akun.css'] as $css)
     <link rel="stylesheet" href="{{ asset($css) }}?v={{ filemtime(public_path($css)) }}">
 @endforeach
 <script src="{{ asset('js/spm.js') }}?v={{ filemtime(public_path('js/spm.js')) }}" defer></script>

@@ -107,6 +107,8 @@
 
     <main class="halaman">
         @yield('konten')
+
+        @include('layouts.kaki')
     </main>
 </body>
 </html>

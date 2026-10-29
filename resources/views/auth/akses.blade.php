@@ -27,7 +27,6 @@
                 <p class="akses-sub brand-masuk" style="--i: 2">Web Standar Pelayanan Minimal RS</p>
             </div>
 
-            <small class="akses-kaki brand-masuk" style="--i: 4">© RSUD Kabupaten Jombang · SPM Track</small>
         </section>
 
         {{-- ===== Panel kanan: form Masuk / Daftar ===== --}}

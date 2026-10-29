@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\KelompokStandar;
 use App\Support\PeriodeSpm;
 use App\Support\XlsxWriter;
 use Illuminate\Http\Request;
@@ -17,8 +18,7 @@ class LaporanController extends Controller
     ];
 
     /**
-     * Halaman laporan: semua standar (atau satu pelayanan) dalam satu tabel panjang,
-     * kolom Januari sampai Desember ditambah Pencapaian tahunan.
+     * Halaman laporan
      */
     public function index(Request $request)
     {
@@ -95,7 +95,7 @@ class LaporanController extends Controller
             $tahun = now()->year;
         }
 
-        // Daftar semua pelayanan: [id => nama]
+        // Daftar semua pelayanan
         $daftarLayanan = DB::table('jenis_pelayanan')->orderBy('id')->pluck('nama_pelayanan', 'id')->all();
 
         // 0 = semua pelayanan
@@ -146,19 +146,24 @@ class LaporanController extends Controller
                 ->all();
         }
 
+        // 'baris' (datar) dipakai ekspor Excel, 'kelompok' dan 'ringkasan' dipakai halaman
+        $baris = self::susunBaris($standar, $isiSpm, $pencapaian);
+        $kelompok = self::ringkasKelompok(KelompokStandar::susun($baris));
+
         return [
             'tahun' => $tahun,
             'layananId' => $layananId,
             'namaLayanan' => $layananId > 0 ? $daftarLayanan[$layananId] : 'Semua pelayanan',
             'daftarLayanan' => $daftarLayanan,
             'daftarTahun' => PeriodeSpm::daftarTahun($tahun),
-            'baris' => self::susunBaris($standar, $isiSpm, $pencapaian),
+            'baris' => $baris,
+            'kelompok' => $kelompok,
+            'ringkasan' => self::hitungRingkasan($kelompok),
         ];
     }
 
     /**
-     * Susun baris laporan dari data mentah (tanpa akses database, jadi mudah dites).
-     * Setiap baris punya 12 nilai bulan dan satu pencapaian.
+     * Susun baris laporan dari data mentah 
      */
     public static function susunBaris(iterable $standar, array $isiSpm, array $pencapaian): array
     {
@@ -173,6 +178,9 @@ class LaporanController extends Controller
                 $bulan[$m] = self::nilaiLaporan($isiSpm, $id, $frekuensi, $m);
             }
 
+            // 'bulan' (12 nilai) dipakai ekspor Excel, 'sel' (sesuai frekuensi) dipakai tampilan web
+            $sel = self::susunSel($frekuensi, $bulan);
+
             $baris[] = [
                 'layanan_id' => (int) $s->jenis_id,
                 'layanan' => $s->nama_pelayanan,
@@ -181,11 +189,75 @@ class LaporanController extends Controller
                 'standar' => $s->deskripsi,
                 'frekuensi' => $frekuensi,
                 'bulan' => $bulan,
+                'sel' => $sel,
+                'terisi' => count(array_filter($sel, fn (array $c) => $c['nilai'] !== '')),
+                'total' => count($sel),
                 'pencapaian' => self::bersihkan($pencapaian[$id] ?? null),
             ];
         }
 
         return $baris;
+    }
+
+    /**
+     * Kotak yang digambar di tabel web untuk satu standar, sesuai frekuensinya.
+     * Bulanan: 12 kotak. Triwulan: 4 kotak lebar (masing-masing 3 bulan). Tahunan: 1 kotak selebar 12 bulan.
+     * Setiap kotak: label, span (jumlah kolom bulan yang ditutupi), nilai.
+     */
+    public static function susunSel(string $frekuensi, array $bulan): array
+    {
+        if ($frekuensi === 'triwulan') {
+            return array_map(
+                fn (int $q) => ['label' => 'TW'.$q, 'span' => 3, 'nilai' => $bulan[$q * 3] ?? ''],
+                [1, 2, 3, 4]
+            );
+        }
+
+        if ($frekuensi === 'tahunan') {
+            return [['label' => 'Tahunan', 'span' => 12, 'nilai' => $bulan[12] ?? '']];
+        }
+
+        return array_map(
+            fn (int $m) => ['label' => self::NAMA_BULAN_PENDEK[$m], 'span' => 1, 'nilai' => $bulan[$m] ?? ''],
+            range(1, 12)
+        );
+    }
+
+    /**
+     * Tambahkan ringkasan ke tiap pelayanan: jumlah kotak terisi, persen, status (untuk warna bar),
+     * dan jumlah standar yang pencapaian tahunannya sudah terisi.
+     */
+    public static function ringkasKelompok(array $kelompok): array
+    {
+        return array_map(function (array $g) {
+            $terisi = array_sum(array_column($g['baris'], 'terisi'));
+            $total = array_sum(array_column($g['baris'], 'total'));
+            $persen = $total > 0 ? round($terisi / $total * 100, 1) : 0.0;
+
+            return $g + [
+                'terisi' => $terisi,
+                'total' => $total,
+                'persen' => $persen,
+                'status' => $persen >= 100 ? 'lengkap' : ($persen > 0 ? 'sebagian' : 'belum'),
+                'pencapaianTerisi' => count(array_filter($g['baris'], fn (array $r) => $r['pencapaian'] !== '')),
+            ];
+        }, $kelompok);
+    }
+
+    // Angka untuk kartu ringkasan di atas tabel (gabungan semua pelayanan yang tampil)
+    public static function hitungRingkasan(array $kelompok): array
+    {
+        $terisi = array_sum(array_column($kelompok, 'terisi'));
+        $total = array_sum(array_column($kelompok, 'total'));
+
+        return [
+            'standar' => array_sum(array_column($kelompok, 'jumlah')),
+            'pelayanan' => count($kelompok),
+            'periodeTerisi' => $terisi,
+            'periodeTotal' => $total,
+            'persen' => $total > 0 ? round($terisi / $total * 100, 1) : 0.0,
+            'pencapaianTerisi' => array_sum(array_column($kelompok, 'pencapaianTerisi')),
+        ];
     }
 
     /**

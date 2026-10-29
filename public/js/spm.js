@@ -1,4 +1,4 @@
-// ===== SPM Track: JavaScript kecil (tema, jam, tombol Esc, lihat password) =====
+// ===== SPM Track: JavaScript kecil (tema, jam, tombol Esc, lihat password, lipat kelompok laporan) =====
 
 const akar = document.documentElement;
 
@@ -44,4 +44,24 @@ document.addEventListener('click', (e) => {
     const tampil = kolom.type === 'password';
     kolom.type = tampil ? 'text' : 'password';
     tombol.toggleAttribute('data-tampil', tampil);
+});
+
+// 5. Laporan: lipat/buka satu kelompok pelayanan, atau semuanya sekaligus
+const aturKelompok = (kelompok, buka) => {
+    kelompok.classList.toggle('tutup', !buka);
+    kelompok.querySelector('[data-lipat-grup]')?.setAttribute('aria-expanded', String(buka));
+};
+
+document.addEventListener('click', (e) => {
+    const kepala = e.target.closest('[data-lipat-grup]');
+    if (kepala) {
+        const kelompok = kepala.closest('.grup-laporan');
+        aturKelompok(kelompok, kelompok.classList.contains('tutup'));
+        return;
+    }
+
+    const semua = e.target.closest('[data-lipat-semua]');
+    if (semua) {
+        document.querySelectorAll('.grup-laporan').forEach((k) => aturKelompok(k, semua.dataset.lipatSemua === 'buka'));
+    }
 });
