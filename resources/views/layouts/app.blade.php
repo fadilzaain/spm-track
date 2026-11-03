@@ -107,6 +107,13 @@
     <label for="sidebar-toggle" class="sidebar-tirai" aria-hidden="true"></label>
 
     <main class="halaman">
+        {{-- Tombol kembali ke dashboard --}}
+        @if (! request()->routeIs('dashboard') && ! $pengguna->wajib_ganti_password)
+            <a class="tombol-teks tombol-kembali" href="{{ route('dashboard', request()->only('tahun', 'bulan')) }}">
+                <x-ikon nama="dashboard" /> Kembali ke Dashboard
+            </a>
+        @endif
+
         @yield('konten')
 
         @include('layouts.kaki')

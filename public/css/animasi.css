@@ -1,0 +1,41 @@
+/* ===== SPM Track: animasi dashboard (dimuat terakhir, jadi bisa dimatikan dengan menghapus satu baris di kepala.blade.php) =====
+
+/* Angka tidak bergeser lebarnya saat dihitung naik */
+.ringkas-angka strong, .kartu-angka { font-variant-numeric: tabular-nums; }
+
+/* ----- 1. Bar, segmen, dan heatmap muncul berurutan (--r = nomor baris, --c = nomor kolom, diisi spm.js) ----- */
+.bar-isi { animation-delay: calc(var(--r, 0) * 60ms + 150ms); }
+.segmen-bar i { animation-delay: calc(var(--c, 0) * 120ms + 200ms); }
+
+@keyframes heat-muncul { from { opacity: 0; transform: scale(0.4); } }
+.heat-sel {
+    /* "backwards": setelah selesai transform kembali bebas, jadi efek hover membesar tetap jalan */
+    animation: heat-muncul 0.5s var(--ease) backwards;
+    animation-delay: calc(var(--r, 0) * 50ms + var(--c, 0) * 28ms + 150ms);
+}
+
+/* Bar dan heatmap yang ada di bawah layar menunggu sampai terlihat (kelas ini dipasang dan dilepas oleh spm.js) */
+.anim-tunggu :is(.bar-isi, .heat-sel) { animation-play-state: paused; }
+
+/* ----- 2. Bagian di bawah layar naik pelan-pelan saat digulir sampai ----- */
+.halaman > .sembunyi { animation: none; opacity: 0; transform: translateY(22px); }
+.halaman > .sembunyi.tampil { opacity: 1; transform: none; transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+
+/* ----- 3. Grafik tren: area di bawah garis memudar masuk, titik bulan terpilih muncul setelah garis selesai ----- */
+@keyframes pudar { from { opacity: 0; } }
+@keyframes titik-muncul { from { opacity: 0; transform: scale(0); } }
+.spark polygon { animation: pudar 1s var(--ease) 0.3s backwards; }
+.spark-titik.aktif { transform-box: fill-box; transform-origin: center; animation: titik-muncul 0.5s var(--ease) 1s backwards; }
+
+/* ----- 4. Pindah tab Detail: isi baru bergeser naik sambil memudar masuk ----- */
+@keyframes tab-masuk { from { opacity: 0; transform: translateY(10px); } }
+.tab-isi.aktif { animation: tab-masuk 0.45s var(--ease) backwards; }
+
+/* ----- 5. Sorot mengikuti kursor di panel ringkasan dan panel bar/heatmap (hanya perangkat dengan mouse) ----- */
+.sorot { transition: border-color 0.35s; }
+.sorot:hover { border-color: color-mix(in oklab, var(--accent) 30%, var(--line)); }
+.sorot::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.4s;
+    background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), color-mix(in oklab, var(--accent) 10%, transparent), transparent 65%);
+}
+.sorot:hover::after { opacity: 1; }

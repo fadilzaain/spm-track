@@ -1,4 +1,4 @@
-// ===== SPM Track: JavaScript kecil (tema, jam, tombol Esc, lihat password, lipat kelompok laporan) =====
+// ===== SPM Track =====
 
 const akar = document.documentElement;
 
@@ -64,6 +64,7 @@ document.addEventListener('click', (e) => {
     if (semua) {
         document.querySelectorAll('.grup-laporan').forEach((k) => aturKelompok(k, semua.dataset.lipatSemua === 'buka'));
     }
+});
 
 // 6. Dashboard: tab Detail (SPM | IKU)
 const wadahTab = document.querySelector('[data-tab-wadah]');
@@ -92,4 +93,89 @@ if (wadahTab) {
         if (tombol) pilihTab(tombol.dataset.tabTombol);
     });
 }
-});
+
+// 7. Dashboard: animasi (angka dihitung naik, bagian muncul saat digulir, sorot mengikuti kursor).
+// Gayanya ada di public/css/animasi.css. Dilewati kalau pengguna mematikan animasi di perangkatnya.
+const dasbor = document.getElementById('ringkasan');
+if (dasbor && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    // 7a. Nomor baris (--r) dan kolom (--c) untuk jeda bertahap pada bar, segmen, dan heatmap
+    document.querySelectorAll('.matriks').forEach((matriks) => {
+        matriks.querySelectorAll('.matriks-baris').forEach((baris, r) => {
+            baris.style.setProperty('--r', r);
+            baris.querySelectorAll('.heat-sel').forEach((sel, c) => sel.style.setProperty('--c', c));
+        });
+    });
+    document.querySelectorAll('.segmen-bar').forEach((bar) => {
+        bar.querySelectorAll('i').forEach((i, c) => i.style.setProperty('--c', c));
+    });
+
+    // 7b. Angka besar dan angka pendukung dihitung naik dari 0. Teks akhir dikembalikan persis seperti aslinya.
+    // Hanya angka polos atau persen (contoh "85,3%", "26"); yang lain seperti "5/20" dibiarkan.
+    const hitungNaik = (el, jeda) => {
+        const asli = el.textContent.trim();
+        const cocok = asli.match(/^(\d+(?:[.,]\d+)?)(\s*%)?$/);
+        if (!cocok) return;
+
+        const desimal = cocok[1].includes(',') ? cocok[1].split(',')[1].length : 0;
+        const nilai = parseFloat(cocok[1].replace(/\./g, '').replace(',', '.'));
+        const akhiran = cocok[2] || '';
+        const format = new Intl.NumberFormat('id-ID', { minimumFractionDigits: desimal, maximumFractionDigits: desimal });
+        const durasi = 1100;
+        const mulai = performance.now() + jeda;
+
+        el.textContent = format.format(0) + akhiran;
+
+        const langkah = (sekarang) => {
+            const p = Math.min(Math.max((sekarang - mulai) / durasi, 0), 1);
+            const halus = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);   // melambat di akhir
+            el.textContent = p === 1 ? asli : format.format(nilai * halus) + akhiran;
+            if (p < 1) requestAnimationFrame(langkah);
+        };
+        requestAnimationFrame(langkah);
+    };
+
+    dasbor.querySelectorAll('.ringkas-angka strong, .kartu-angka').forEach((el, i) => hitungNaik(el, 250 + i * 70));
+
+    // 7c. Bagian yang masih di bawah layar muncul saat digulir sampai. Dilewati kalau alamat memuat #tabel dan sejenisnya,
+    // supaya lompatan ke bagian itu tidak bertemu bagian yang masih tersembunyi.
+    if ('IntersectionObserver' in window && !location.hash) {
+        const dibawah = [...document.querySelectorAll('.halaman > .bagian')]
+            .filter((b) => b.getBoundingClientRect().top > innerHeight * 0.9);
+
+        if (dibawah.length) {
+            const pengamat = new IntersectionObserver((daftar) => {
+                daftar.forEach((d) => {
+                    if (!d.isIntersecting) return;
+                    d.target.classList.add('tampil');
+                    d.target.querySelectorAll('.anim-tunggu').forEach((x) => x.classList.remove('anim-tunggu'));
+                    pengamat.unobserve(d.target);
+                });
+            }, { threshold: 0.08 });
+
+            dibawah.forEach((b) => {
+                b.classList.add('sembunyi');
+                b.querySelectorAll('.panel-matriks').forEach((p) => p.classList.add('anim-tunggu'));
+                pengamat.observe(b);
+            });
+        }
+    }
+
+    // 7d. Sorot cahaya mengikuti kursor di panel (hanya perangkat dengan mouse)
+    if (matchMedia('(hover: hover)').matches) {
+        document.querySelectorAll('.ringkas, .panel-matriks').forEach((kartu) => {
+            kartu.classList.add('sorot');
+            let menunggu = false;
+
+            kartu.addEventListener('pointermove', (e) => {
+                if (menunggu) return;
+                menunggu = true;
+                requestAnimationFrame(() => {
+                    const k = kartu.getBoundingClientRect();
+                    kartu.style.setProperty('--mx', `${e.clientX - k.left}px`);
+                    kartu.style.setProperty('--my', `${e.clientY - k.top}px`);
+                    menunggu = false;
+                });
+            });
+        });
+    }
+}
