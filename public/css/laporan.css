@@ -109,4 +109,5 @@ td.bln.terisi .cap { color: var(--accent); }
 
 @media (max-width: 760px) {
     .kpi-tiga { grid-template-columns: minmax(0, 1fr); }
+    .kpi-tiga .kartu + .kartu { border-left: 0; border-top: 1px solid var(--line); }
 }

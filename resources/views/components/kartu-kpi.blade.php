@@ -1,19 +1,16 @@
 @props(['k'])
 
 {{--
-    Kartu angka ringkasan, dipakai dashboard dan laporan.
+    Satu angka ringkasan (label, angka, keterangan), dipakai di panel ringkasan dashboard dan di halaman laporan.
+    Kunci opsional: 'utama' (angka diberi warna aksen), 'bar' (persen, bar tipis di bawah angka).
 --}}
-<article class="kartu nada-{{ $k['nada'] }}">
-    <header class="kartu-kepala">
-        <span class="ikon-kotak"><x-ikon :nama="$k['ikon']" /></span>
-        <span class="kartu-label">{{ $k['label'] }}</span>
-    </header>
-
-    <strong class="kartu-angka">{{ $k['angka'] }}</strong>
+<article class="kartu">
+    <span class="kartu-label">{{ $k['label'] }}</span>
+    <strong class="kartu-angka {{ ($k['utama'] ?? false) ? 'kartu-angka-utama' : '' }}">{{ $k['angka'] }}</strong>
 
     @isset($k['bar'])
         <span class="bar-trek"><span class="bar-isi" style="width: {{ number_format($k['bar'], 1, '.', '') }}%"></span></span>
     @endisset
 
-    <span class="badge {{ $k['badgeKelas'] }}">{{ $k['badge'] }}</span>
+    <span class="kartu-info {{ $k['badgeKelas'] }}">{{ $k['badge'] }}</span>
 </article>

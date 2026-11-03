@@ -1,10 +1,10 @@
-/* ===== SPM Track: tampilan dashboard (hero ringkas, KPI, bar, heatmap, tabel standar) ===== */
+/* ===== SPM Track: tampilan dashboard (hero ringkas, ringkasan, bar, heatmap, tabel standar) ===== */
 
-/* Animasi bar tumbuh dan donut menyapu dari 0% */
+/* Animasi bar tumbuh dan garis tren tergambar dari kiri */
 @keyframes tumbuh { from { transform: scaleX(0); } }
-@keyframes sapu { from { --a: 0%; --b: 0%; } }
+@keyframes gambar { from { stroke-dashoffset: 1; } }
 
-/* Warna status: satu variabel --warna dipakai bar, titik legenda, dan donut */
+/* Warna status: satu variabel --warna dipakai bar, titik legenda, dan bar bersegmen */
 .bar-lengkap { --warna: var(--ok); }
 .bar-sebagian { --warna: var(--warn); }
 .bar-belum { --warna: var(--bad); }
@@ -13,35 +13,52 @@
 .kepala-ringkas { padding: 16px 22px; align-items: center; }
 .kepala-ringkas h1 { font-size: 24px; }
 
-/* ===== Baris ringkasan: 4 kartu KPI + 1 kartu komposisi ===== */
-.kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.4fr); gap: 14px; }
+/* ===== Ringkasan: dua panel, SPM lebih lebar karena memuat grafik tren ===== */
+.ringkasan { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; }
 
-.kartu { padding: 16px 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; transition: transform 0.3s var(--ease), border-color 0.3s; }
-.kartu:hover { transform: translateY(-2px); border-color: color-mix(in oklab, var(--tone, var(--accent)) 40%, var(--line)); }
-.kartu .ikon-kotak { width: 32px; height: 32px; border-radius: 10px; }
-.kartu .ikon { width: 18px; height: 18px; }
-.kartu-kepala { display: flex; align-items: center; gap: 10px; }
-.kartu-label { color: var(--ink-2); font-size: 13px; font-weight: 500; }
-.kartu-angka { font: 600 30px/1 var(--font); letter-spacing: -0.01em; }
-.nada-utama .kartu-angka { color: var(--accent); }
-.kartu .bar-trek { width: 100%; }
-.kartu .badge { margin-top: auto; white-space: normal; line-height: 1.3; }   /* badge turun ke dasar kartu supaya semua kartu rata bawah */
+/* Panel tanpa padding sendiri: tiap bagian mengatur jaraknya, supaya garis pemisah angka pendukung bisa penuh selebar panel */
+.ringkas { display: flex; flex-direction: column; padding: 0; }
+.ringkas-kepala { padding: 18px 22px 0; }
+.ringkas-kepala h2 { font-size: 14px; }
 
-/* Kartu komposisi: donut kecil di kiri, legenda di kanan */
-.kartu-komposisi { gap: 10px; }
-.komposisi-isi { display: flex; align-items: center; gap: 18px; width: 100%; }
-.donut {
-    width: 92px; height: 92px; flex: none; border-radius: 50%; display: grid; place-items: center;
-    background: conic-gradient(var(--ok) 0 var(--a), var(--warn) var(--a) var(--b), var(--bad) var(--b) 100%);
-    animation: sapu 1.1s var(--ease) both;
-}
-.donut-isi { width: 64px; height: 64px; border-radius: 50%; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.donut-isi strong { font: 600 22px/1 var(--font); }
-.donut-isi span { font-size: 10px; color: var(--ink-2); margin-top: 2px; }
-.legenda { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; max-width: 230px; font-size: 12.5px; }
-.legenda li { display: flex; align-items: center; gap: 8px; }
-.legenda b { margin-left: auto; font-weight: 600; }
-.titik { width: 9px; height: 9px; flex: none; border-radius: 50%; display: inline-block; background: var(--warna); }
+.ringkas-utama { flex: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 28px; padding: 16px 22px 0; }   /* flex: 1 meratakan bar dan deretan angka kedua panel */
+.ringkas-angka { display: flex; flex-direction: column; gap: 6px; }
+.ringkas-baris { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.ringkas-angka strong { font: 600 44px/1 var(--font); letter-spacing: -0.02em; color: var(--accent); }
+.ringkas-angka .redup { margin: 0; }
+
+/* Grafik tren: garis tergambar sekali saat halaman dibuka, titik bulan terpilih diberi lingkaran */
+.spark { flex: 1 1 200px; max-width: 340px; min-width: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.spark figcaption, .spark-sumbu { font-size: 11.5px; color: var(--ink-2); }
+.spark svg { width: 100%; height: auto; overflow: visible; }
+.spark-sumbu { display: flex; justify-content: space-between; margin-top: -2px; }
+.spark-stop { stop-color: var(--accent); }
+.spark-dasar { stroke: var(--line); stroke-width: 1; }
+.spark-garis { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; animation: gambar 1.1s var(--ease) both; }
+.spark-titik { fill: transparent; }
+.spark-titik:hover { fill: color-mix(in oklab, var(--accent) 35%, transparent); }
+.spark-titik.aktif { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+
+/* Bar status bersegmen: lebar tiap segmen sebanding dengan jumlahnya */
+.segmen { display: flex; flex-direction: column; gap: 10px; padding: 18px 22px 0; }
+.segmen-bar { display: flex; gap: 3px; height: 8px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+.segmen-bar i { flex: 1 1 0; min-width: 6px; border-radius: 999px; background: var(--warna); transform-origin: left; animation: tumbuh 0.9s var(--ease) both; }
+.legenda { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12.5px; color: var(--ink-2); }
+.legenda li { display: flex; align-items: center; gap: 7px; }
+.legenda b { color: var(--ink); font-weight: 600; }
+.titik { width: 8px; height: 8px; flex: none; border-radius: 50%; display: inline-block; background: var(--warna); }
+
+/* ===== Angka pendukung: satu deret terbagi garis tipis (di dalam panel ringkasan maupun berdiri sendiri di laporan) ===== */
+.kpi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.ringkas .kpi-grid { margin-top: 18px; background: none; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+
+.kartu { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; padding: 14px 22px 16px; }
+.kartu + .kartu { border-left: 1px solid var(--line); }
+.kartu-label { color: var(--ink-2); font-size: 12px; }
+.kartu-angka { font: 600 22px/1.25 var(--font); }
+.kartu-angka-utama { color: var(--accent); }
+.kartu-info { color: var(--tone, var(--ink-2)); font-size: 12px; line-height: 1.35; }
+.kartu .bar-trek { width: 100%; height: 4px; margin: 6px 0 2px; }
 
 /* ===== Bar dan heatmap: dua panel berdampingan, baris keduanya setinggi sama ===== */
 .baris-utama { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 14px; align-items: stretch; }
@@ -120,9 +137,8 @@ a.matriks-label:hover { color: var(--accent); }
 .pil-kosong { color: var(--ink-2); background: transparent; border: 1px dashed var(--line); }
 
 /* ===== Layar lebih sempit ===== */
-@media (max-width: 1180px) {
-    .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .kartu-komposisi { grid-column: 1 / -1; }
+@media (max-width: 1100px) {
+    .ringkasan { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 1000px) {
@@ -140,5 +156,8 @@ a.matriks-label:hover { color: var(--accent); }
     .matriks { --label: 118px; }
     .matriks-bar { min-width: 0; }
     .matriks-heat { min-width: 470px; }
-    .kartu-angka { font-size: 26px; }
+    .ringkas-kepala, .ringkas-utama, .segmen { padding-left: 16px; padding-right: 16px; }
+    .ringkas-angka strong { font-size: 38px; }
+    .kartu { padding: 12px 14px 14px; }
+    .kartu-angka { font-size: 19px; }
 }

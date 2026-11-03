@@ -3,7 +3,7 @@
 @section('judul', 'SPM TRACK')
 
 @section('konten')
-    @php
+        @php
         $pengguna = auth()->user();
 
         // Sapaan mengikuti jam server (zona waktu Asia/Jakarta di config/app.php)
@@ -27,30 +27,13 @@
             : ($selisih >= 0 ? '+' : '').number_format($selisih, 1, ',', '.').' poin vs bulan lalu';
         $badgeSelisih = is_null($selisih) ? '' : ($selisih >= 0 ? 'badge-ok' : 'badge-bad');
 
-        // Empat kartu KPI SPM dibuat dari satu daftar ini lalu digambar lewat perulangan
-        $kpi = [
-            ['label' => 'Total standar', 'angka' => $totalStandar, 'ikon' => 'daftar', 'nada' => 'info',
-             'badge' => count($layanan).' jenis pelayanan', 'badgeKelas' => ''],
-            ['label' => 'Sudah terisi', 'angka' => $totalTerisi, 'ikon' => 'centang', 'nada' => 'ok',
-             'badge' => $jmlLengkap.' pelayanan lengkap', 'badgeKelas' => 'badge-ok'],
-            ['label' => 'Belum terisi', 'angka' => $totalBelum, 'ikon' => 'peringatan', 'nada' => 'bad',
-             'badge' => $jmlBelum.' pelayanan kosong', 'badgeKelas' => 'badge-bad'],
-            ['label' => 'Kelengkapan', 'angka' => number_format($persenKini, 1, ',', '.').'%', 'ikon' => 'persen', 'nada' => 'utama',
-             'badge' => $teksSelisih, 'badgeKelas' => $badgeSelisih, 'bar' => $persenKini],
-        ];
-
-        // Sudut donut dalam persen: lengkap | sebagian | belum
-        $n = max(count($layanan), 1);
-        $a = round($jmlLengkap / $n * 100, 2);
-        $b = round(($jmlLengkap + $jmlSebagian) / $n * 100, 2);
-
         // Tabel standar dikelompokkan: pelayanan -> indikator -> standar (helper yang sama dengan halaman laporan).
         // Tujuannya supaya sel pelayanan dan indikator bisa digabung (rowspan), tidak diulang atau dikosongkan per baris
         $kelompokTabel = \App\Support\KelompokStandar::susun($tabel);
         $jumlahBarisTabel = count($tabel);
         $jumlahTerisiTabel = collect($tabel)->whereNotNull('nilai')->count();
 
-        // Ringkasan IKU untuk empat kartu KPI IKU
+        // Angka dasar IKU untuk panel ringkasan di bawah
         $jumlahIku = $iku['jumlah'];
         $terisiIku = $iku['terisi'];
         $belumIku = $jumlahIku - $terisiIku;
@@ -61,18 +44,46 @@
         $capaianIku = count(array_filter($iku['baris'], fn ($r) => $r['capaian'] !== ''));
         $belumCapaiIku = $jumlahIku - $capaianIku;
 
-        // Empat kartu KPI IKU dibuat dari satu daftar ini lalu digambar lewat perulangan
-        $kpiIku = [
-            ['label' => 'Total IKU', 'angka' => $jumlahIku, 'ikon' => 'daftar', 'nada' => 'info',
-             'badge' => $jumlahSasaran.' sasaran', 'badgeKelas' => ''],
-            ['label' => 'IKU terisi', 'angka' => $terisiIku, 'ikon' => 'centang', 'nada' => 'ok',
-             'badge' => 'periode '.$namaBulan[$bulan], 'badgeKelas' => 'badge-ok'],
-            ['label' => 'IKU belum terisi', 'angka' => $belumIku, 'ikon' => 'peringatan', 'nada' => 'bad',
-             'badge' => $belumIku > 0 ? 'periode '.$namaBulan[$bulan] : 'semua terisi',
-             'badgeKelas' => $belumIku > 0 ? 'badge-bad' : 'badge-ok'],
-            ['label' => 'Kelengkapan IKU', 'angka' => number_format($persenIku, 1, ',', '.').'%', 'ikon' => 'persen', 'nada' => 'utama',
-             'badge' => 'capaian tahunan '.$capaianIku.'/'.$jumlahIku,
-             'badgeKelas' => $belumCapaiIku > 0 ? '' : 'badge-ok', 'bar' => $persenIku],
+        // Dua panel ringkasan (SPM dan IKU) dibuat dari daftar di bawah lalu digambar oleh <x-ringkasan>
+        $ringkasSpm = [
+            'judul' => 'Standar Pelayanan Minimal',
+            'angka' => number_format($persenKini, 1, ',', '.').'%',
+            'label' => 'Kelengkapan pengisian',
+            'catatan' => $teksSelisih,
+            'catatanKelas' => $badgeSelisih,
+            'tren' => ['data' => $tren, 'aktif' => $bulan, 'nama' => $namaBulan, 'judul' => 'Tren kelengkapan '.$tahun],
+            'segmen' => [
+                ['n' => $jmlLengkap, 'kelas' => 'bar-lengkap', 'label' => 'Lengkap'],
+                ['n' => $jmlSebagian, 'kelas' => 'bar-sebagian', 'label' => 'Sebagian'],
+                ['n' => $jmlBelum, 'kelas' => 'bar-belum', 'label' => 'Belum diisi'],
+            ],
+            'stat' => [
+                ['label' => 'Total standar', 'angka' => $totalStandar,
+                 'badge' => count($layanan).' pelayanan', 'badgeKelas' => ''],
+                ['label' => 'Sudah terisi', 'angka' => $totalTerisi,
+                 'badge' => $jmlLengkap.' pelayanan lengkap', 'badgeKelas' => 'badge-ok'],
+                ['label' => 'Belum terisi', 'angka' => $totalBelum,
+                 'badge' => $jmlBelum.' pelayanan kosong', 'badgeKelas' => 'badge-bad'],
+            ],
+        ];
+
+        $ringkasIku = [
+            'judul' => 'Indikator Kinerja Utama',
+            'angka' => number_format($persenIku, 1, ',', '.').'%',
+            'label' => 'Kelengkapan periode '.$namaBulan[$bulan],
+            'segmen' => [
+                ['n' => $terisiIku, 'kelas' => 'bar-lengkap', 'label' => 'Terisi'],
+                ['n' => $belumIku, 'kelas' => 'bar-belum', 'label' => 'Belum diisi'],
+            ],
+            'stat' => [
+                ['label' => 'Total IKU', 'angka' => $jumlahIku,
+                 'badge' => $jumlahSasaran.' sasaran', 'badgeKelas' => ''],
+                ['label' => 'Sudah terisi', 'angka' => $terisiIku,
+                 'badge' => 'periode '.$namaBulan[$bulan], 'badgeKelas' => 'badge-ok'],
+                ['label' => 'Capaian tahunan', 'angka' => $capaianIku.'/'.$jumlahIku,
+                 'badge' => $belumCapaiIku > 0 ? $belumCapaiIku.' belum terisi' : 'semua terisi',
+                 'badgeKelas' => $belumCapaiIku > 0 ? 'badge-bad' : 'badge-ok'],
+            ],
         ];
     @endphp
 
@@ -96,55 +107,10 @@
         </div>
     </section>
 
-    {{-- ===== Bagian 1: Ringkasan (kartu KPI SPM dan IKU) ===== --}}
-    <section class="bagian" id="ringkasan">
-        <header class="bagian-kepala">
-            <div>
-                <h2>Ringkasan</h2>
-                <p class="redup">Kelengkapan pengisian periode {{ $namaBulan[$bulan] }} {{ $tahun }}</p>
-            </div>
-        </header>
-
-        {{-- SPM: 4 kartu KPI + 1 kartu komposisi status (donut kecil) --}}
-        <div class="kelompok-kpi">
-            <p class="kelompok-judul">Standar Pelayanan Minimal (SPM)</p>
-
-            <div class="kpi-grid">
-                @foreach ($kpi as $k)
-                    <x-kartu-kpi :k="$k" />
-                @endforeach
-
-                <article class="kartu kartu-komposisi">
-                    <span class="kartu-label">Komposisi status pelayanan</span>
-
-                    <div class="komposisi-isi">
-                        <div class="donut" style="--a: {{ $a }}%; --b: {{ $b }}%">
-                            <div class="donut-isi">
-                                <strong>{{ $jmlLengkap }}</strong>
-                                <span>dari {{ count($layanan) }}</span>
-                            </div>
-                        </div>
-
-                        <ul class="legenda">
-                            <li><i class="titik bar-lengkap"></i> Lengkap <b>{{ $jmlLengkap }}</b></li>
-                            <li><i class="titik bar-sebagian"></i> Sebagian <b>{{ $jmlSebagian }}</b></li>
-                            <li><i class="titik bar-belum"></i> Belum diisi <b>{{ $jmlBelum }}</b></li>
-                        </ul>
-                    </div>
-                </article>
-            </div>
-        </div>
-
-        {{-- IKU: 4 kartu KPI (komponen yang sama dengan kartu SPM) --}}
-        <div class="kelompok-kpi">
-            <p class="kelompok-judul">Indikator Kinerja Utama (IKU)</p>
-
-            <div class="kpi-grid kpi-empat">
-                @foreach ($kpiIku as $k)
-                    <x-kartu-kpi :k="$k" />
-                @endforeach
-            </div>
-        </div>
+    {{-- ===== Ringkasan: dua panel (SPM dengan grafik tren, IKU) ===== --}}
+    <section class="ringkasan" id="ringkasan">
+        <x-ringkasan :r="$ringkasSpm" />
+        <x-ringkasan :r="$ringkasIku" />
     </section>
 
     {{-- ===== Bagian 2: Kelengkapan pengisian SPM, bar (kiri) dan peta setahun (kanan), tinggi barisnya dibuat sama ===== --}}

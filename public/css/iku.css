@@ -7,14 +7,6 @@
 .bagian-kepala h2 { font-size: 18px; }
 .bagian-kepala .redup { margin: 4px 0 0; font-size: 13px; }
 
-/* Kelompok kartu KPI (SPM dan IKU): judul kecil huruf kapital dengan garis aksen di kirinya */
-.kelompok-kpi { display: flex; flex-direction: column; gap: 10px; }
-.kelompok-judul {
-    margin: 0; display: flex; align-items: center; gap: 8px;
-    font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2);
-}
-.kelompok-judul::before { content: ""; width: 3px; height: 14px; border-radius: 2px; background: var(--accent); }
-
 /* ===== Tab Detail (SPM | IKU) ===== */
 .tab-baris {
     display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px;

@@ -9,12 +9,12 @@
 
         // Tiga kartu dibuat dari satu daftar lalu digambar lewat <x-kartu-kpi> (komponen yang sama dengan dashboard)
         $kartu = [
-            ['label' => 'Total standar', 'angka' => $ringkasan['standar'], 'ikon' => 'daftar', 'nada' => 'info',
+            ['label' => 'Total standar', 'angka' => $ringkasan['standar'],
              'badge' => $ringkasan['pelayanan'].' jenis pelayanan', 'badgeKelas' => ''],
-            ['label' => 'Periode terisi', 'angka' => number_format($ringkasan['persen'], 1, ',', '.').'%', 'ikon' => 'persen', 'nada' => 'utama',
+            ['label' => 'Periode terisi', 'angka' => number_format($ringkasan['persen'], 1, ',', '.').'%', 'utama' => true,
              'badge' => $ringkasan['periodeTerisi'].' dari '.$ringkasan['periodeTotal'].' periode setahun', 'badgeKelas' => '',
              'bar' => $ringkasan['persen']],
-            ['label' => 'Pencapaian tahunan', 'angka' => $ringkasan['pencapaianTerisi'].'/'.$ringkasan['standar'], 'ikon' => 'target', 'nada' => 'ok',
+            ['label' => 'Pencapaian tahunan', 'angka' => $ringkasan['pencapaianTerisi'].'/'.$ringkasan['standar'],
              'badge' => $belumCapai > 0 ? $belumCapai.' belum terisi' : 'semua terisi', 'badgeKelas' => $belumCapai > 0 ? 'badge-bad' : 'badge-ok'],
         ];
 

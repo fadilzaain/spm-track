@@ -118,13 +118,22 @@ class DashboardController extends Controller
             $selisih = round($persenKini - $persenLalu, 1);
         }
 
-        // 6. Heatmap: kelengkapan tiap pelayanan di tiap bulan (nilai 0 sampai 1)
+        // 6. Heatmap: kelengkapan tiap pelayanan di tiap bulan (nilai 0 sampai 1).
+        //    Rekap tiap bulan yang sama dipakai lagi untuk tren keseluruhan (persen 0 sampai 100),
+        //    hanya sampai bulan yang sudah berjalan supaya bulan depan tidak tergambar sebagai 0%.
+        $batasTren = $tahun < now()->year ? 12 : ($tahun === now()->year ? now()->month : 0);
         $heatmap = [];
+        $tren = [];
         for ($b = 1; $b <= 12; $b++) {
             $rekapB = $this->rekapBulan($standar, $isi, $b);
             foreach ($namaLayanan as $id => $nama) {
                 $t = $rekapB[$id]['total'] ?? 0;
                 $heatmap[$id][$b] = $t > 0 ? ($rekapB[$id]['terisi'] / $t) : 0;
+            }
+
+            if ($b <= $batasTren) {
+                $totalB = array_sum(array_column($rekapB, 'total'));
+                $tren[$b] = $totalB > 0 ? round(array_sum(array_column($rekapB, 'terisi')) / $totalB * 100, 1) : 0;
             }
         }
 
@@ -175,6 +184,7 @@ class DashboardController extends Controller
             'jmlSebagian' => $jmlSebagian,
             'jmlBelum' => $jmlBelum,
             'heatmap' => $heatmap,
+            'tren' => $tren,
             'tabel' => $tabel,
             'iku' => RingkasanIku::susun($tahun, $bulan),
         ]);
