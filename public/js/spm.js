@@ -2,11 +2,36 @@
 
 const akar = document.documentElement;
 
-// 1. Ganti tema gelap/terang, pilihan disimpan di browser
-document.querySelector('[data-ganti-tema]')?.addEventListener('click', () => {
+// 1. Ganti tema gelap/terang, pilihan disimpan di browser.
+// Di browser yang mendukung View Transitions, tema baru melebar melingkar dari tombol yang diklik.
+document.querySelector('[data-ganti-tema]')?.addEventListener('click', (e) => {
     const baru = akar.dataset.tema === 'terang' ? 'gelap' : 'terang';
-    akar.dataset.tema = baru;
-    try { localStorage.setItem('tema', baru); } catch (e) { /* abaikan kalau penyimpanan diblokir */ }
+    const terapkan = () => {
+        akar.dataset.tema = baru;
+        try { localStorage.setItem('tema', baru); } catch (err) { /* abaikan kalau penyimpanan diblokir */ }
+    };
+
+    if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        terapkan();
+        return;
+    }
+
+    const k = e.currentTarget.getBoundingClientRect();
+    const x = k.left + k.width / 2;
+    const y = k.top + k.height / 2;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+
+    akar.classList.add('ganti-tema');   // mematikan efek pudar bawaan, gayanya di animasi.css
+    const peralihan = document.startViewTransition(terapkan);
+
+    peralihan.ready.then(() => {
+        akar.animate(
+            { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+            { duration: 700, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', pseudoElement: '::view-transition-new(root)' }
+        );
+    }).catch(() => { /* peralihan dibatalkan: tema tetap berganti lewat terapkan() */ });
+
+    peralihan.finished.finally(() => akar.classList.remove('ganti-tema'));
 });
 
 // 2. Jam hidup (zona waktu WIB), format: "Rab, 28 Okt · 08.24.47"
@@ -177,5 +202,52 @@ if (dasbor && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
                 });
             });
         });
+    }
+
+    // 7e. Sapaan muncul kata demi kata (gayanya .kata di animasi.css)
+    const judulSapaan = document.querySelector('.kepala-ringkas h1');
+    if (judulSapaan) {
+        let nomor = 0;
+        const bungkus = (teks) => {
+            const isi = document.createDocumentFragment();
+            teks.split(/(\s+)/).forEach((bagian) => {
+                if (!bagian) return;
+                if (/^\s+$/.test(bagian)) { isi.append(bagian); return; }
+                const kata = document.createElement('span');
+                kata.className = 'kata';
+                kata.style.setProperty('--k', nomor++);
+                kata.textContent = bagian;
+                isi.append(kata);
+            });
+            return isi;
+        };
+
+        [...judulSapaan.childNodes].forEach((n) => {
+            if (n.nodeType === Node.TEXT_NODE) {
+                n.replaceWith(bungkus(n.textContent));
+            } else if (n.nodeType === Node.ELEMENT_NODE) {
+                n.classList.add('kata');
+                n.style.setProperty('--k', nomor++);
+            }
+        });
+    }
+
+    // 7f. Tab Detail: pil aksen bergeser halus dari tab lama ke tab baru (wadahTab dari bagian 6)
+    if (wadahTab) {
+        const barisTab = wadahTab.querySelector('.tab-baris');
+        const letakkan = () => {
+            const aktif = barisTab?.querySelector('.tab-tombol.aktif');
+            if (!aktif) return;
+            barisTab.style.setProperty('--tab-x', `${aktif.offsetLeft}px`);
+            barisTab.style.setProperty('--tab-w', `${aktif.offsetWidth}px`);
+        };
+
+        if (barisTab) {
+            letakkan();
+            barisTab.classList.add('geser');
+            // Pendengar ini dipasang setelah milik bagian 6, jadi kelas "aktif" sudah pindah saat dijalankan
+            wadahTab.addEventListener('click', letakkan);
+            addEventListener('resize', letakkan);
+        }
     }
 }

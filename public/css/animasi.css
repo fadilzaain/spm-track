@@ -1,4 +1,4 @@
-/* ===== SPM Track: animasi dashboard (dimuat terakhir, jadi bisa dimatikan dengan menghapus satu baris di kepala.blade.php) =====
+/* ===== SPM Track: animasi dashboard  */
 
 /* Angka tidak bergeser lebarnya saat dihitung naik */
 .ringkas-angka strong, .kartu-angka { font-variant-numeric: tabular-nums; }
@@ -39,3 +39,48 @@
     background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), color-mix(in oklab, var(--accent) 10%, transparent), transparent 65%);
 }
 .sorot:hover::after { opacity: 1; }
+
+/* ================= Lapisan "mahal": peralihan halus antar halaman dan detail kecil ================= */
+
+/* ----- 6. Pindah halaman terasa seperti satu aplikasi: isi lama pudar, isi baru masuk (Chrome/Edge 126+, browser lain tetap pindah biasa) ----- */
+@media (prefers-reduced-motion: no-preference) {
+    @view-transition { navigation: auto; }
+}
+::view-transition-group(root) { animation-duration: 0.35s; }
+
+/* ----- 7. Ganti tema: tema baru melebar melingkar dari tombol (lingkarannya digerakkan spm.js) ----- */
+html.ganti-tema::view-transition-old(root),
+html.ganti-tema::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.ganti-tema::view-transition-old(root) { z-index: 1; }
+html.ganti-tema::view-transition-new(root) { z-index: 2; }
+
+/* ----- 8. Sapaan muncul kata demi kata: naik, dari buram menjadi tajam ----- */
+@keyframes kata-masuk { from { opacity: 0; transform: translateY(0.5em); filter: blur(8px); } }
+.kata { display: inline-block; animation: kata-masuk 0.9s var(--ease) backwards; animation-delay: calc(var(--k, 0) * 90ms + 200ms); }
+
+/* ----- 9. Tab Detail: pil aksen bergeser antar tab (kelas .geser dipasang spm.js; tanpa JS tab memakai gaya lama) ----- */
+.tab-baris { position: relative; }
+.tab-tombol { position: relative; z-index: 1; }
+.tab-baris.geser::before {
+    content: ""; position: absolute; top: 4px; bottom: 4px; left: 0; width: var(--tab-w, 0px);
+    transform: translateX(var(--tab-x, 0px)); border-radius: 999px; background: var(--accent);
+    box-shadow: 0 6px 18px color-mix(in oklab, var(--accent) 35%, transparent);
+    transition: transform 0.5s var(--ease), width 0.5s var(--ease);
+}
+.tab-baris.geser .tab-tombol.aktif { background: transparent; }
+
+/* ----- 10. Tombol utama: kilau cahaya lewat sekali saat disorot ----- */
+.tombol-utama { position: relative; overflow: hidden; }
+.tombol-utama::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; transform: translateX(-120%);
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.35) 50%, transparent 65%);
+}
+.tombol-utama:hover::after { transform: translateX(120%); transition: transform 0.8s var(--ease); }
+
+/* ----- 11. Hero dashboard: bola cahaya lembut melayang pelan di latar (keyframes "melayang" ada di akses.css) ----- */
+.kepala-ringkas::before {
+    content: ""; position: absolute; z-index: 0; top: -170px; right: 12%; width: 300px; height: 300px; border-radius: 50%;
+    background: var(--aksen-2); filter: blur(80px); opacity: 0.16; pointer-events: none;
+    animation: melayang 18s ease-in-out infinite alternate;
+}
+.kepala-ringkas > * { position: relative; z-index: 1; }
