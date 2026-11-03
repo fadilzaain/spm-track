@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Pencapaian;
 use App\Models\Spm;
 use App\Support\PeriodeSpm;
 use Illuminate\Http\Request;
@@ -9,10 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class InputNilaiController extends Controller
 {
-    /**
-     * Tampilkan form: pilih tahun, bulan, dan pelayanan, lalu semua standar
-     * pelayanan itu muncul dengan kolom nilai untuk periode terpilih.
-     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -39,12 +36,15 @@ class InputNilaiController extends Controller
                 : (int) array_key_first($daftarLayanan);
         }
 
-        // 2. Ambil standar milik pelayanan terpilih beserta nilai yang sudah ada
+        // 2. Ambil standar milik pelayanan terpilih beserta nilai dan pencapaian yang sudah ada
         $standar = $this->ambilStandar($layananId);
         $idStandar = $standar->pluck('standar_id')->all();
 
         // $isi[standar_id][periode_tipe][periode_no] = nilai
         $isi = [];
+        // $capai[standar_id] = pencapaian tahunan
+        $capai = [];
+
         if ($idStandar) {
             $dataSpm = DB::table('spm')
                 ->where('tahun', $tahun)
@@ -54,6 +54,12 @@ class InputNilaiController extends Controller
             foreach ($dataSpm as $r) {
                 $isi[$r->standar_indikator_id][$r->periode_tipe][$r->periode_no] = $r->nilai;
             }
+
+            $capai = DB::table('pencapaian')
+                ->where('tahun', $tahun)
+                ->whereIn('standar_indikator_id', $idStandar)
+                ->pluck('nilai', 'standar_indikator_id')
+                ->all();
         }
 
         // 3. Susun baris untuk tampilan
@@ -68,6 +74,7 @@ class InputNilaiController extends Controller
                 'standar' => $s->deskripsi,
                 'periode' => PeriodeSpm::label((string) $s->frekuensi, $bulan),
                 'nilai' => $isi[$s->standar_id][$tipe][$no] ?? '',
+                'pencapaian' => $capai[$s->standar_id] ?? '',
             ];
         }
 
@@ -77,7 +84,7 @@ class InputNilaiController extends Controller
             'layananId' => $layananId,
             'namaLayanan' => $daftarLayanan[$layananId] ?? '-',
             'daftarLayanan' => $daftarLayanan,
-            'daftarTahun' => PeriodeSpm::daftarTahun($tahun),
+            'daftarTahun' => PeriodeSpm::daftarTahun($tahun, ['spm', 'pencapaian']),
             'namaBulan' => PeriodeSpm::NAMA_BULAN,
             'baris' => $baris,
             'bisaIsi' => $this->bisaMengisi($user, $layananId),
@@ -85,8 +92,8 @@ class InputNilaiController extends Controller
     }
 
     /**
-     * Simpan semua nilai di form sekaligus.
-     * Kolom yang dikosongkan berarti "belum diisi", jadi nilai lamanya dihapus.
+     * Simpan semua nilai dan pencapaian di form sekaligus (satu transaksi).
+     * Kolom yang dikosongkan berarti "belum diisi", jadi isi lamanya dihapus.
      */
     public function simpan(Request $request)
     {
@@ -98,66 +105,91 @@ class InputNilaiController extends Controller
             'layanan' => ['required', 'integer', 'exists:jenis_pelayanan,id'],
             'nilai' => ['nullable', 'array'],
             'nilai.*' => ['nullable', 'string', 'max:255'],
+            'pencapaian' => ['nullable', 'array'],
+            'pencapaian.*' => ['nullable', 'string', 'max:255'],
         ]);
 
         $tahun = (int) $data['tahun'];
         $bulan = (int) $data['bulan'];
         $layananId = (int) $data['layanan'];
-        $kiriman = $data['nilai'] ?? [];
+        $kirimanNilai = $data['nilai'] ?? [];
+        $kirimanCapai = $data['pencapaian'] ?? [];
 
         // Admin boleh mengisi semua pelayanan, petugas unit hanya pelayanannya sendiri
         if (! $this->bisaMengisi($user, $layananId)) {
-            abort(403, 'Anda hanya boleh mengisi nilai untuk pelayanan Anda sendiri.');
+            abort(403, 'Anda hanya boleh mengisi data untuk pelayanan Anda sendiri.');
         }
 
-        $disimpan = 0;
-        $dikosongkan = 0;
+        // Jumlah isian yang benar-benar berubah (ditambah, diubah, atau dikosongkan)
+        $perubahan = 0;
 
         // Hanya standar milik pelayanan ini yang diproses, id lain dari form diabaikan
         $standar = $this->ambilStandar($layananId);
 
-        DB::transaction(function () use ($standar, $kiriman, $tahun, $bulan, $user, &$disimpan, &$dikosongkan) {
+        DB::transaction(function () use ($standar, $kirimanNilai, $kirimanCapai, $tahun, $bulan, $user, &$perubahan) {
             foreach ($standar as $s) {
+                $id = (int) $s->standar_id;
+
+                // ----- Nilai periode terpilih (bulanan / triwulan / tahunan) -----
                 [$tipe, $no] = PeriodeSpm::kunci((string) $s->frekuensi, $bulan);
 
-                $kunci = [
-                    'standar_indikator_id' => (int) $s->standar_id,
+                $kunciNilai = [
+                    'standar_indikator_id' => $id,
                     'tahun' => $tahun,
                     'periode_tipe' => $tipe,
                     'periode_no' => $no,
                 ];
 
-                $nilai = trim((string) ($kiriman[$s->standar_id] ?? ''));
-                $ada = Spm::where($kunci)->first();
+                $nilai = trim((string) ($kirimanNilai[$id] ?? ''));
+                $adaNilai = Spm::where($kunciNilai)->first();
 
-                // Kolom kosong: hapus nilai lama kalau ada
                 if ($nilai === '') {
-                    if ($ada) {
-                        $ada->delete();
-                        $dikosongkan++;
+                    // Kolom kosong: hapus nilai lama kalau ada
+                    if ($adaNilai) {
+                        $adaNilai->delete();
+                        $perubahan++;
                     }
-
-                    continue;
+                } elseif (! $adaNilai || $adaNilai->nilai !== $nilai) {
+                    $baru = $adaNilai ?? new Spm($kunciNilai);
+                    if (! $adaNilai) {
+                        $baru->dibuat_oleh = $user->id;
+                    }
+                    $baru->nilai = $nilai;
+                    $baru->diubah_oleh = $user->id;
+                    $baru->save();
+                    $perubahan++;
                 }
 
-                // Nilai tidak berubah: tidak perlu menyentuh database
-                if ($ada && $ada->nilai === $nilai) {
-                    continue;
-                }
+                // ----- Pencapaian tahunan -----
+                $kunciCapai = [
+                    'standar_indikator_id' => $id,
+                    'tahun' => $tahun,
+                ];
 
-                $baris = $ada ?? new Spm($kunci);
-                if (! $ada) {
-                    $baris->dibuat_oleh = $user->id;
+                $capai = trim((string) ($kirimanCapai[$id] ?? ''));
+                $adaCapai = Pencapaian::where($kunciCapai)->first();
+
+                if ($capai === '') {
+                    // Kolom kosong: hapus pencapaian lama kalau ada
+                    if ($adaCapai) {
+                        $adaCapai->delete();
+                        $perubahan++;
+                    }
+                } elseif (! $adaCapai || $adaCapai->nilai !== $capai) {
+                    $baru = $adaCapai ?? new Pencapaian($kunciCapai);
+                    if (! $adaCapai) {
+                        $baru->dibuat_oleh = $user->id;
+                    }
+                    $baru->nilai = $capai;
+                    $baru->diubah_oleh = $user->id;
+                    $baru->save();
+                    $perubahan++;
                 }
-                $baris->nilai = $nilai;
-                $baris->diubah_oleh = $user->id;
-                $baris->save();
-                $disimpan++;
             }
         });
 
-        $pesan = ($disimpan + $dikosongkan) > 0
-            ? "Tersimpan: {$disimpan} nilai diperbarui, {$dikosongkan} dikosongkan."
+        $pesan = $perubahan > 0
+            ? "Tersimpan: {$perubahan} isian diperbarui."
             : 'Tidak ada perubahan.';
 
         return redirect()

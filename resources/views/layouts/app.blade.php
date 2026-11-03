@@ -15,13 +15,12 @@
         $menu = [
             'Pemantauan' => [
                 ['rute' => 'dashboard',    'cocok' => 'dashboard',     'nama' => 'Dashboard',   'ikon' => 'dashboard'],
-                ['rute' => 'laporan',      'cocok' => 'laporan*',      'nama' => 'Laporan',     'ikon' => 'laporan'],
+                ['rute' => 'laporan',      'cocok' => 'laporan*',      'nama' => 'Laporan SPM',     'ikon' => 'laporan'],
                 ['rute' => 'iku.laporan',  'cocok' => 'iku.laporan*',  'nama' => 'Laporan IKU', 'ikon' => 'laporan'],
             ],
             'Pengisian data' => [
-                ['rute' => 'input.nilai',  'cocok' => 'input.nilai*',  'nama' => 'Input Nilai', 'ikon' => 'input'],
-                ['rute' => 'pencapaian',   'cocok' => 'pencapaian*',   'nama' => 'Pencapaian',  'ikon' => 'target'],
-                                ['rute' => 'input.iku',    'cocok' => 'input.iku*',    'nama' => 'Input IKU',   'ikon' => 'daftar'],
+                ['rute' => 'input.nilai',  'cocok' => 'input.nilai*',  'nama' => 'Input SPM',   'ikon' => 'input'],
+                ['rute' => 'input.iku',    'cocok' => 'input.iku*',    'nama' => 'Input IKU',   'ikon' => 'daftar'],
             ],
         ];
 

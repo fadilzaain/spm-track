@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('judul', 'Input Nilai')
+@section('judul', 'Input SPM')
 
 @section('konten')
     {{-- ===== Kepala halaman + filter ===== --}}
     <section class="kepala-halaman">
         <div>
-            <h1>Input Nilai Bulanan</h1>
+            <h1>Input SPM</h1>
             <p class="redup">{{ $namaLayanan }} · {{ $namaBulan[$bulan] }} {{ $tahun }}</p>
         </div>
 
@@ -48,10 +48,10 @@
     @endif
 
     @unless ($bisaIsi)
-        <div class="pesan">Mode lihat saja. Anda hanya bisa mengisi nilai untuk pelayanan Anda sendiri.</div>
+        <div class="pesan">Mode lihat saja. Anda hanya bisa mengisi data untuk pelayanan Anda sendiri.</div>
     @endunless
 
-    {{-- ===== Form nilai ===== --}}
+    {{-- ===== Form nilai + pencapaian ===== --}}
     <form method="POST" action="{{ route('input.nilai.simpan') }}" class="panel">
         @csrf
         <input type="hidden" name="tahun" value="{{ $tahun }}">
@@ -59,7 +59,7 @@
         <input type="hidden" name="layanan" value="{{ $layananId }}">
 
         @if ($bisaIsi)
-            <p class="redup petunjuk">Kosongkan kolom nilai untuk menandai belum diisi. Standar yang dilaporkan per triwulan memakai satu nilai untuk seluruh triwulannya.</p>
+            <p class="redup petunjuk">Nilai mengikuti periode di kolom Periode: untuk triwulan, satu nilai berlaku untuk seluruh bulan dalam triwulan itu. Pencapaian diisi satu kali per tahun untuk tiap standar. Kosongkan kolom untuk menandai belum diisi.</p>
         @endif
 
         <div class="tabel-gulir">
@@ -70,6 +70,7 @@
                         <th>Standar</th>
                         <th>Periode</th>
                         <th>Nilai</th>
+                        <th>Pencapaian {{ $tahun }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -80,21 +81,24 @@
                             <td class="sel-layanan">{{ $r['indikator_id'] !== $indikatorLalu ? $r['indikator'] : '' }}</td>
                             <td>{{ $r['standar'] }}</td>
                             <td><span class="pil">{{ $r['periode'] }}</span></td>
-                            <td class="sel-input">
-                                @if ($bisaIsi)
-                                    <input type="text" class="input-teks" maxlength="255"
-                                           name="nilai[{{ $r['standar_id'] }}]"
-                                           value="{{ old('nilai.'.$r['standar_id'], $r['nilai']) }}">
-                                @elseif ($r['nilai'] !== '')
-                                    <span class="nilai">{{ $r['nilai'] }}</span>
-                                @else
-                                    <span class="pil pil-belum">Belum diisi</span>
-                                @endif
-                            </td>
+
+                            @foreach (['nilai', 'pencapaian'] as $kolom)
+                                <td class="sel-input">
+                                    @if ($bisaIsi)
+                                        <input type="text" class="input-teks" maxlength="255"
+                                               name="{{ $kolom }}[{{ $r['standar_id'] }}]"
+                                               value="{{ old($kolom.'.'.$r['standar_id'], $r[$kolom]) }}">
+                                    @elseif ($r[$kolom] !== '')
+                                        <span class="nilai">{{ $r[$kolom] }}</span>
+                                    @else
+                                        <span class="pil pil-belum">Belum diisi</span>
+                                    @endif
+                                </td>
+                            @endforeach
                         </tr>
                         @php $indikatorLalu = $r['indikator_id']; @endphp
                     @empty
-                        <tr><td colspan="4" class="redup">Pelayanan ini belum punya standar.</td></tr>
+                        <tr><td colspan="5" class="redup">Pelayanan ini belum punya standar.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -102,7 +106,7 @@
 
         @if ($bisaIsi && count($baris) > 0)
             <div class="aksi-form">
-                <button type="submit" class="tombol-utama">Simpan nilai</button>
+                <button type="submit" class="tombol-utama">Simpan</button>
             </div>
         @endif
     </form>
