@@ -6,6 +6,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InputNilaiController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\LaporanIkuController;
+use App\Http\Controllers\InputIkuController;
 use App\Http\Controllers\PencapaianController;
 use App\Http\Controllers\PenggunaController;
 use Illuminate\Support\Facades\Route;
@@ -58,9 +60,21 @@ Route::middleware(['auth', 'aktif', 'wajib.ganti'])->group(function () {
         ->middleware('role:admin,petugas_unit')
         ->name('pencapaian.simpan');
 
+    
+    // IKU: semua role boleh MELIHAT, tapi hanya admin yang boleh MENYIMPAN
+    Route::get('/input-iku', [InputIkuController::class, 'index'])->name('input.iku');
+    Route::post('/input-iku', [InputIkuController::class, 'simpan'])
+        ->middleware('role:admin')
+        ->name('input.iku.simpan');
+
     // Laporan rekap: semua role boleh melihat dan mengunduh. Ekspor Excel mengikuti filter (?tahun=&layanan=)
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
     Route::get('/laporan/ekspor', [LaporanController::class, 'ekspor'])->name('laporan.ekspor');
+
+    
+    // Laporan IKU: semua role boleh melihat dan mengunduh. Ekspor Excel mengikuti tahun yang dipilih (?tahun=)
+    Route::get('/iku/laporan', [LaporanIkuController::class, 'index'])->name('iku.laporan');
+    Route::get('/iku/laporan/ekspor', [LaporanIkuController::class, 'ekspor'])->name('iku.laporan.ekspor');
 
     // Kelola pengguna: khusus admin (setujui pendaftar baru, ubah role, nonaktifkan akun)
     Route::middleware('role:admin')->group(function () {

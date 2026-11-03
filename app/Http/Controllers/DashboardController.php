@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\RingkasanIku;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -175,6 +176,7 @@ class DashboardController extends Controller
             'jmlBelum' => $jmlBelum,
             'heatmap' => $heatmap,
             'tabel' => $tabel,
+            'iku' => RingkasanIku::susun($tahun, $bulan),
         ]);
     }
 

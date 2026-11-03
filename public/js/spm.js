@@ -64,4 +64,32 @@ document.addEventListener('click', (e) => {
     if (semua) {
         document.querySelectorAll('.grup-laporan').forEach((k) => aturKelompok(k, semua.dataset.lipatSemua === 'buka'));
     }
+
+// 6. Dashboard: tab Detail (SPM | IKU)
+const wadahTab = document.querySelector('[data-tab-wadah]');
+if (wadahTab) {
+    const pilihTab = (nama) => {
+        wadahTab.querySelectorAll('[data-tab-tombol]').forEach((t) => {
+            const aktif = t.dataset.tabTombol === nama;
+            t.classList.toggle('aktif', aktif);
+            t.setAttribute('aria-selected', String(aktif));
+        });
+        wadahTab.querySelectorAll('[data-tab-isi]').forEach((p) => {
+            p.classList.toggle('aktif', p.dataset.tabIsi === nama);
+        });
+        try { sessionStorage.setItem('tabDetail', nama); } catch (e) { /* abaikan kalau penyimpanan diblokir */ }
+    };
+
+    // Tab terakhir diingat selama sesi supaya tidak balik ke SPM setiap ganti tahun atau bulan.
+    // Tautan #tabel (klik nama pelayanan di bar kelengkapan) selalu membuka tab SPM.
+    let awal = 'spm';
+    try { awal = sessionStorage.getItem('tabDetail') || 'spm'; } catch (e) { /* pakai tab SPM */ }
+    if (location.hash === '#tabel' || !wadahTab.querySelector(`[data-tab-isi="${awal}"]`)) awal = 'spm';
+    pilihTab(awal);
+
+    wadahTab.addEventListener('click', (e) => {
+        const tombol = e.target.closest('[data-tab-tombol]');
+        if (tombol) pilihTab(tombol.dataset.tabTombol);
+    });
+}
 });

@@ -17,6 +17,12 @@ class PeriodeSpm
         9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
     ];
 
+    // Nama bulan singkat untuk judul kolom tabel laporan (kunci 1 sampai 12)
+    public const NAMA_BULAN_PENDEK = [
+        1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun',
+        7 => 'Jul', 8 => 'Agu', 9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+    ];
+
     /**
      * Kunci periode yang dipakai di tabel spm untuk satu bulan.
      * bulanan = bulan itu sendiri, triwulan = triwulan yang memuat bulan itu, tahunan = periode 1.
@@ -31,6 +37,19 @@ class PeriodeSpm
         };
     }
 
+    /**
+     * Apakah bulan ini termasuk bulan lapor untuk frekuensi tersebut?
+     * Bulanan: semua bulan. Triwulan: hanya bulan penutup (Mar, Jun, Sep, Des). Tahunan: hanya Desember.
+     */
+    public static function bulanLapor(string $frekuensi, int $bulan): bool
+    {
+        return match ($frekuensi) {
+            'triwulan' => $bulan % 3 === 0,
+            'tahunan' => $bulan === 12,
+            default => true,
+        };
+    }
+
     // Label periode untuk ditampilkan di form (contoh: "Triwulan 2")
     public static function label(string $frekuensi, int $bulan): string
     {
@@ -41,17 +60,23 @@ class PeriodeSpm
         };
     }
 
-    // Daftar tahun untuk pilihan filter: tahun yang sudah ada datanya + tahun berjalan + tahun terpilih
-    public static function daftarTahun(int $tahunDipilih): array
+    /**
+     * Daftar tahun untuk pilihan filter: tahun yang sudah ada datanya + tahun berjalan + tahun terpilih.
+     * $tabel = tabel yang dicek kolom `tahun`-nya (default tabel spm, IKU memakai tabel miliknya sendiri).
+     */
+    public static function daftarTahun(int $tahunDipilih, array $tabel = ['spm']): array
     {
-        $daftar = DB::table('spm')->distinct()->pluck('tahun')->map(fn ($t) => (int) $t)->all();
+        $daftar = [now()->year, $tahunDipilih];
 
-        foreach ([now()->year, $tahunDipilih] as $t) {
-            if (! in_array($t, $daftar, true)) {
-                $daftar[] = $t;
-            }
+        foreach ($tabel as $nama) {
+            $daftar = array_merge(
+                $daftar,
+                DB::table($nama)->distinct()->pluck('tahun')->map(fn ($t) => (int) $t)->all()
+            );
         }
 
+        // Buang duplikat lalu urutkan dari tahun terbaru
+        $daftar = array_values(array_unique($daftar));
         rsort($daftar);
 
         return $daftar;

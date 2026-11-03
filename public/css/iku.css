@@ -1,0 +1,39 @@
+/* ===== SPM Track: section dashboard (judul bagian, kelompok kartu KPI, tab Detail) ===== */
+
+/* Satu bagian dashboard: judul di atas, isi di bawahnya dengan jarak tetap */
+.bagian { display: flex; flex-direction: column; gap: 14px; }
+
+.bagian-kepala { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.bagian-kepala h2 { font-size: 18px; }
+.bagian-kepala .redup { margin: 4px 0 0; font-size: 13px; }
+
+/* Kelompok kartu KPI (SPM dan IKU): judul kecil huruf kapital dengan garis aksen di kirinya */
+.kelompok-kpi { display: flex; flex-direction: column; gap: 10px; }
+.kelompok-judul {
+    margin: 0; display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2);
+}
+.kelompok-judul::before { content: ""; width: 3px; height: 14px; border-radius: 2px; background: var(--accent); }
+
+/* ===== Tab Detail (SPM | IKU) ===== */
+.tab-baris {
+    display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--line);
+}
+.tab-tombol {
+    font: 500 13px var(--font); color: var(--ink-2); background: transparent; border: 0; border-radius: 999px;
+    padding: 8px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    transition: color 0.2s, background-color 0.25s var(--ease);
+}
+.tab-tombol:hover { color: var(--ink); }
+.tab-tombol.aktif { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.tab-tombol.aktif .pil { --tone: var(--on-accent); }   /* pil jumlah ikut warna teks tab yang aktif */
+
+/* Hanya isi tab yang aktif yang tampil */
+.tab-isi:not(.aktif) { display: none; }
+
+/* Tanpa JavaScript tab tidak bisa dipindah, jadi dua-duanya tampil bertumpuk dan tombol tab disembunyikan */
+@media (scripting: none) {
+    .tab-isi:not(.aktif) { display: block; }
+    .tab-baris { display: none; }
+}
